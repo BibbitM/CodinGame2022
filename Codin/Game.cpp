@@ -1,8 +1,9 @@
 #include "Game.h"
 
+#include "Controller.h"
 #include "Entity.h"
 #include "EntityDescription.h"
-#include "Controller.h"
+#include "Rules.h"
 #include "Utils.h"
 
 #include <algorithm>
@@ -29,6 +30,14 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			{
 				entIt->second->SetController(std::make_unique<Controller>(entIt->second.get()));
 				myHeroes.push_back(entIt->second);
+
+				// Determine base position
+				if (frame == 1)
+				{
+					const Vector& heroPosition = entIt->second->GetPosition();
+					if (DistanceSqr(heroPosition, Rules::mapSize) < DistanceSqr(heroPosition, Vector{}))
+						basePosition = Rules::mapSize;
+				}
 			}
 		}
 	}
@@ -47,7 +56,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 
 	// Tick all heroes.
 	for (const auto& hero : myHeroes)
-		hero->GetController()->Tick(allEntities);
+		hero->GetController()->Tick(*this);
 }
 
 void Game::MakeMove(std::ostream& out) const

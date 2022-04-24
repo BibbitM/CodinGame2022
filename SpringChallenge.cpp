@@ -2,52 +2,6 @@
 // #include "Controller.h" begin
 // ..\Codin\Controller.h
 // #pragma once
-class Entity;
-
-#include <iosfwd>
-#include <memory>
-#include <unordered_map>
-
-class Controller
-{
-public:
-	Controller(Entity* owner) : owner(owner) { }
-
-	void Tick(const std::unordered_map<int, std::shared_ptr<Entity>>& allEntities);
-	void MakeMove(std::ostream& out) const;
-
-private:
-	Entity* owner{};
-};
-// #include "Controller.h" end
-
-// #include "Utils.h" begin
-// ..\Codin\Utils.h
-// #pragma once
-#define UNUSED(x) (void)(x)
-// #include "Utils.h" end
-
-#include <iostream>
-
-void Controller::Tick(const std::unordered_map<int, std::shared_ptr<Entity>>& allEntities)
-{
-	UNUSED(allEntities);
-}
-
-void Controller::MakeMove(std::ostream& out) const
-{
-	// Write an action using cout. DON'T FORGET THE "<< endl"
-	// To debug: cerr << "Debug messages..." << endl;
-
-	// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
-	out << "WAIT" << std::endl;
-}
-// ..\Codin\Entity.cpp
-// #include "Entity.h" begin
-// ..\Codin\Entity.h
-// #pragma once
-// #include "Controller.h" begin
-// #include "Controller.h" end
 // #include "Vector.h" begin
 // ..\Codin\Vector.h
 // #pragma once
@@ -87,6 +41,35 @@ std::istream& operator>>(std::istream& in, Vector& vec);
 std::ostream& operator<<(std::ostream& out, const Vector& vec);
 // #include "Vector.h" end
 
+#include <iosfwd>
+#include <memory>
+#include <unordered_map>
+
+class Entity;
+class Game;
+
+class Controller
+{
+public:
+	Controller(Entity* owner) : owner(owner) { }
+
+	void Tick(const Game& game);
+	void MakeMove(std::ostream& out) const;
+
+private:
+	Entity* owner{};
+	Vector targetPosition{};
+};
+// #include "Controller.h" end
+
+// #include "Entity.h" begin
+// ..\Codin\Entity.h
+// #pragma once
+// #include "Controller.h" begin
+// #include "Controller.h" end
+// #include "Vector.h" begin
+// #include "Vector.h" end
+
 #include <cstdint>
 #include <memory>
 
@@ -115,7 +98,12 @@ public:
 	void SetController(std::unique_ptr<Controller> controller);
 	Controller* GetController() { return controllingBrain.get(); }
 
+	const Vector& GetPosition() const { return position; }
+	const Vector& GetVelocity() const { return velocity; }
+	Vector GetTargetPosition() const { return position + velocity; }
+
 	EntityType GetType() const { return type; }
+	ThreatFor GetThreatFor() const { return threatFor; }
 	int GetLastFrame() const { return lastFrame; }
 
 private:
@@ -132,6 +120,96 @@ private:
 	bool isControlled{};
 	bool isNearBase{};
 };
+// #include "Entity.h" end
+// #include "Game.h" begin
+// ..\Codin\Game.h
+// #pragma once
+// #include "Vector.h" begin
+// #include "Vector.h" end
+
+#include <iosfwd>
+#include <memory>
+#include <unordered_map>
+#include <vector>
+
+class Entity;
+
+struct EntityDescription;
+struct StatsDescription;
+
+class Game
+{
+public:
+	Game(int numHeroes)
+		: numHeroes(numHeroes)
+	{ }
+	Game(const Game&) = delete;
+
+	void Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc);
+
+	void MakeMove(std::ostream& out) const;
+
+	const std::unordered_map<int, std::shared_ptr<Entity>>& GetAllEntities() const { return allEntities; }
+	const Vector& GetBasePosition() const { return basePosition; }
+
+private:
+	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
+	std::vector<std::shared_ptr<Entity>> myHeroes;
+	Vector basePosition{};
+	int numHeroes{};
+	int frame{};
+};
+// #include "Game.h" end
+
+#include <algorithm>
+#include <iostream>
+#include <vector>
+
+void Controller::Tick(const Game& game)
+{
+	std::vector<Entity*> myEnemies;
+	myEnemies.reserve(game.GetAllEntities().size());
+	std::vector<Entity*> otherEnemies;
+	otherEnemies.reserve(game.GetAllEntities().size());
+
+	for (const auto& ent : game.GetAllEntities())
+	{
+		if (ent.second->GetThreatFor() == ThreatFor::MyBase)
+			myEnemies.push_back(ent.second.get());
+		else if (ent.second->GetType() == EntityType::Monster)
+			otherEnemies.push_back(ent.second.get());
+	}
+
+	auto compareEnemyDist = [&game](Entity* a, Entity* b) { return DistanceSqr(a->GetTargetPosition(), game.GetBasePosition()) < DistanceSqr(b->GetTargetPosition(), game.GetBasePosition()); };
+
+	if (!myEnemies.empty())
+	{
+		std::sort(myEnemies.begin(), myEnemies.end(), compareEnemyDist);
+		targetPosition = myEnemies.front()->GetTargetPosition();
+	}
+	else if (!otherEnemies.empty())
+	{
+		std::sort(otherEnemies.begin(), otherEnemies.end(), compareEnemyDist);
+		targetPosition = otherEnemies.front()->GetTargetPosition();
+	}
+	else
+		targetPosition = owner->GetPosition();
+}
+
+void Controller::MakeMove(std::ostream& out) const
+{
+	// Write an action using cout. DON'T FORGET THE "<< endl"
+	// To debug: cerr << "Debug messages..." << endl;
+
+	// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
+
+	if (owner->GetPosition() == targetPosition)
+		out << "WAIT" << std::endl;
+	else
+		out << "MOVE " << targetPosition << std::endl;
+}
+// ..\Codin\Entity.cpp
+// #include "Entity.h" begin
 // #include "Entity.h" end
 
 // #include "EntityDescription.h" begin
@@ -195,44 +273,29 @@ std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 }
 // ..\Codin\Game.cpp
 // #include "Game.h" begin
-// ..\Codin\Game.h
-// #pragma once
-#include <iosfwd>
-#include <memory>
-#include <unordered_map>
-#include <vector>
-
-class Entity;
-
-struct EntityDescription;
-struct StatsDescription;
-
-class Game
-{
-public:
-	Game(int numHeroes)
-		: numHeroes(numHeroes)
-	{ }
-
-	void Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc);
-
-	void MakeMove(std::ostream& out) const;
-
-private:
-	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
-	std::vector<std::shared_ptr<Entity>> myHeroes;
-	int numHeroes{};
-	int frame{};
-};
 // #include "Game.h" end
 
+// #include "Controller.h" begin
+// #include "Controller.h" end
 // #include "Entity.h" begin
 // #include "Entity.h" end
 // #include "EntityDescription.h" begin
 // #include "EntityDescription.h" end
-// #include "Controller.h" begin
-// #include "Controller.h" end
+// #include "Rules.h" begin
+// ..\Codin\Rules.h
+// #pragma once
+// #include "Vector.h" begin
+// #include "Vector.h" end
+
+struct Rules
+{
+	static constexpr Vector mapSize{ 17630, 9000 };
+};
+// #include "Rules.h" end
 // #include "Utils.h" begin
+// ..\Codin\Utils.h
+// #pragma once
+#define UNUSED(x) (void)(x)
 // #include "Utils.h" end
 
 #include <algorithm>
@@ -259,6 +322,14 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			{
 				entIt->second->SetController(std::make_unique<Controller>(entIt->second.get()));
 				myHeroes.push_back(entIt->second);
+
+				// Determine base position
+				if (frame == 1)
+				{
+					const Vector& heroPosition = entIt->second->GetPosition();
+					if (DistanceSqr(heroPosition, Rules::mapSize) < DistanceSqr(heroPosition, Vector{}))
+						basePosition = Rules::mapSize;
+				}
 			}
 		}
 	}
@@ -277,7 +348,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 
 	// Tick all heroes.
 	for (const auto& hero : myHeroes)
-		hero->GetController()->Tick(allEntities);
+		hero->GetController()->Tick(*this);
 }
 
 void Game::MakeMove(std::ostream& out) const

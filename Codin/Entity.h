@@ -31,7 +31,12 @@ public:
 	void SetController(std::unique_ptr<Controller> controller);
 	Controller* GetController() { return controllingBrain.get(); }
 
+	const Vector& GetPosition() const { return position; }
+	const Vector& GetVelocity() const { return velocity; }
+	Vector GetTargetPosition() const { return position + velocity; }
+
 	EntityType GetType() const { return type; }
+	ThreatFor GetThreatFor() const { return threatFor; }
 	int GetLastFrame() const { return lastFrame; }
 
 private:

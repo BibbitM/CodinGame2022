@@ -8,6 +8,7 @@
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Controller.h" />
+    <ClInclude Include="Rules.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vector.cpp" />
