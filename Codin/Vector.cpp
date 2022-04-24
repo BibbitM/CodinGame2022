@@ -4,12 +4,12 @@
 
 std::istream& operator>>(std::istream& in, Vector& vec)
 {
-	in >> vec.x >> vec.y >> vec.z;
+	in >> vec.x >> vec.y;
 	return in;
 }
 
 std::ostream& operator<<(std::ostream& out, const Vector& vec)
 {
-	out << vec.x << ' ' << vec.y << ' ' << vec.z;
+	out << vec.x << ' ' << vec.y;
 	return out;
 }

@@ -4,7 +4,7 @@
 
 struct Vector
 {
-	int x, y, z;
+	int x, y;
 };
 
 std::istream& operator>>(std::istream& in, Vector& vec);
