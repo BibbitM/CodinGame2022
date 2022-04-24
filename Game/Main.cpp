@@ -17,48 +17,21 @@ int main()
 			int mana; // Ignore in the first league; Spend ten mana to cast a spell
 			std::cin >> health >> mana; std::cin.ignore();
 		}
-		int entity_count; // Amount of heros and monsters you can see
+		int entity_count; // Amount of heroes and monsters you can see
 		std::cin >> entity_count; std::cin.ignore();
-		Vector sum{};
-		Vector threat{};
-		int threat_count = 0;
 		for (int i = 0; i < entity_count; i++)
 		{
 			EntityDescription entDesc;
 			std::cin >> entDesc; std::cin.ignore();
-			sum += entDesc.pos;
-			if (entDesc.threat_for == 1)
-			{
-				threat += entDesc.pos;
-				++threat_count;
-			}
 		}
-
-		Vector center = sum / entity_count;
-		threat = threat_count ? threat / threat_count : center;
 
 		for (int i = 0; i < heroes_per_player; i++) {
 
 			// Write an action using cout. DON'T FORGET THE "<< endl"
 			// To debug: cerr << "Debug messages..." << endl;
 
-
 			// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
-			switch (rand() % 4)
-			{
-			case 0:
-				std::cout << "WAIT" << std::endl;
-				break;
-			case 1:
-				std::cout << "MOVE " << center << std::endl;
-				break;
-			case 2:
-				std::cout << "MOVE " << base << std::endl;
-				break;
-			case 3:
-				std::cout << "MOVE " << threat << std::endl;
-				break;
-			}
+			std::cout << "WAIT" << std::endl;
 		}
 	}
 }
