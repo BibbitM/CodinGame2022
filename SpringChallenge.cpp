@@ -7,6 +7,20 @@
 struct Vector
 {
 	int x, y;
+
+	bool operator==(const Vector& b) const { return x == b.x && y == b.y; }
+
+	Vector operator+(const Vector& b) const { return Vector{ x + b.x, y + b.y }; }
+	Vector& operator+=(const Vector& b) { x += b.x; y += b.y; return *this; }
+
+	Vector operator-(const Vector& b) const { return Vector{ x - b.x, y - b.y }; }
+	Vector& operator-=(const Vector& b) { x -= b.x; y -= b.y; return *this; }
+
+	Vector operator*(int b) const { return Vector{ x * b, y * b }; }
+	Vector& operator*=(int b) { x *= b; y *= b; return *this; }
+
+	Vector operator/(int b) const { return Vector{ x / b, y / b }; }
+	Vector& operator/=(int b) { x /= b; y /= b; return *this; }
 };
 
 std::istream& operator>>(std::istream& in, Vector& vec);
@@ -62,21 +76,16 @@ int main()
 			int near_base; // 0=monster with no target yet, 1=monster targeting a base
 			int threat_for; // Given this monster's trajectory, is it a threat to 1=your base, 2=your opponent's base, 0=neither
 			std::cin >> id >> type >> pos >> shield_life >> is_controlled >> health >> vel >> near_base >> threat_for; std::cin.ignore();
-			sum.x += pos.x;
-			sum.y += pos.y;
+			sum += pos;
 			if (threat_for == 1)
 			{
-				threat.x += pos.x;
-				threat.y += pos.y;
+				threat += pos;
 				++threat_count;
 			}
 		}
 
-		Vector center;
-		center.x = sum.x / entity_count;
-		center.y = sum.y / entity_count;
-		threat.x = threat_count ? threat.x / threat_count : center.x;
-		threat.y = threat_count ? threat.y / threat_count : center.y;
+		Vector center = sum / entity_count;
+		threat = threat_count ? threat / threat_count : center;
 
 		for (int i = 0; i < heroes_per_player; i++) {
 
