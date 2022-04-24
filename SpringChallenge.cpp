@@ -5,7 +5,6 @@
 // #include "Vector.h" begin
 // ..\Codin\Vector.h
 // #pragma once
-#include <cmath>
 #include <iosfwd>
 
 struct Vector
@@ -43,7 +42,6 @@ std::ostream& operator<<(std::ostream& out, const Vector& vec);
 
 #include <iosfwd>
 #include <memory>
-#include <unordered_map>
 
 class Entity;
 class Game;
@@ -369,7 +367,6 @@ struct StatsDescription
 };
 
 std::istream& operator>>(std::istream& in, StatsDescription& statsDesc);
-
 // #include "StatsDescription.h" end
 
 #include <iostream>

@@ -9,4 +9,3 @@ struct StatsDescription
 };
 
 std::istream& operator>>(std::istream& in, StatsDescription& statsDesc);
-

@@ -4,7 +4,6 @@
 
 #include <iosfwd>
 #include <memory>
-#include <unordered_map>
 
 class Entity;
 class Game;
