@@ -51,6 +51,7 @@ void Controller::MakeMove(std::ostream& out) const
 // #include "Vector.h" begin
 // ..\Codin\Vector.h
 // #pragma once
+#include <cmath>
 #include <iosfwd>
 
 struct Vector
@@ -71,6 +72,16 @@ struct Vector
 	Vector operator/(int b) const { return Vector{ x / b, y / b }; }
 	Vector& operator/=(int b) { x /= b; y /= b; return *this; }
 };
+
+inline int Sqr(int val)
+{
+	return val * val;
+}
+
+inline int DistanceSqr(const Vector& a, const Vector& b)
+{
+	return Sqr(a.x - b.x) + Sqr(a.y - b.y);
+}
 
 std::istream& operator>>(std::istream& in, Vector& vec);
 std::ostream& operator<<(std::ostream& out, const Vector& vec);

@@ -102,3 +102,12 @@ TEST(VectorTest, DivisionInPlace)
 	a /= b;
 	EXPECT_EQ(a, div);
 }
+
+TEST(VectorTest, DistanceSqr)
+{
+	EXPECT_EQ(DistanceSqr(Vector({ 0, 0 }), Vector({ 0, 0 })), 0);
+	EXPECT_EQ(DistanceSqr(Vector({ 11, 230 }), Vector({ 11, 230 })), 0);
+	EXPECT_EQ(DistanceSqr(Vector({ 100, 0 }), Vector({ 200, 0 })), 10000);
+	EXPECT_EQ(DistanceSqr(Vector({ 0, 1 }), Vector({ 0, 2 })), 1 );
+	EXPECT_EQ(DistanceSqr(Vector({ 3, 4 }), Vector({ 5, 6 })), 8);
+}
