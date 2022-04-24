@@ -1,6 +1,4 @@
-extern int Codin();
-
 int main()
 {
-	return Codin();
+	return 0;
 }
