@@ -1,3 +1,4 @@
+#include "../Codin/EntityDescription.h"
 #include "../Codin/Vector.h"
 
 #include <iostream>
@@ -21,21 +22,14 @@ int main()
 		Vector sum{};
 		Vector threat{};
 		int threat_count = 0;
-		for (int i = 0; i < entity_count; i++) {
-			int id; // Unique identifier
-			int type; // 0=monster, 1=your hero, 2=opponent hero
-			Vector pos; // Position of this entity
-			int shield_life; // Ignore for this league; Count down until shield spell fades
-			int is_controlled; // Ignore for this league; Equals 1 when this entity is under a control spell
-			int health; // Remaining health of this monster
-			Vector vel; // Trajectory of this monster
-			int near_base; // 0=monster with no target yet, 1=monster targeting a base
-			int threat_for; // Given this monster's trajectory, is it a threat to 1=your base, 2=your opponent's base, 0=neither
-			std::cin >> id >> type >> pos >> shield_life >> is_controlled >> health >> vel >> near_base >> threat_for; std::cin.ignore();
-			sum += pos;
-			if (threat_for == 1)
+		for (int i = 0; i < entity_count; i++)
+		{
+			EntityDescription entDesc;
+			std::cin >> entDesc; std::cin.ignore();
+			sum += entDesc.pos;
+			if (entDesc.threat_for == 1)
 			{
-				threat += pos;
+				threat += entDesc.pos;
 				++threat_count;
 			}
 		}
