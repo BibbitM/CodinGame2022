@@ -55,6 +55,60 @@ std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 	in >> entDesc.id >> entDesc.type >> entDesc.pos >> entDesc.shield_life >> entDesc.is_controlled >> entDesc.health >> entDesc.vel >> entDesc.near_base >> entDesc.threat_for;
 	return in;
 }
+// ..\Codin\Game.cpp
+// #include "Game.h" begin
+// ..\Codin\Game.h
+// #pragma once
+#include <iosfwd>
+#include <vector>
+
+struct EntityDescription;
+struct StatsDescription;
+
+class Game
+{
+public:
+	Game(int numHeroes)
+		: numHeroes(numHeroes)
+	{ }
+
+	void Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc);
+
+	void MakeMove(std::ostream& out) const;
+
+private:
+	int numHeroes{};
+};
+
+// #include "Game.h" end
+
+// #include "Utils.h" begin
+// ..\Codin\Utils.h
+// #pragma once
+#define UNUSED(x) (void)(x)
+// #include "Utils.h" end
+
+#include <iostream>
+
+void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc)
+{
+	UNUSED(myStats);
+	UNUSED(opponentsStats);
+
+	UNUSED(entitiesDesc);
+}
+
+void Game::MakeMove(std::ostream& out) const
+{
+	for (int i = 0; i < numHeroes; i++) {
+
+		// Write an action using cout. DON'T FORGET THE "<< endl"
+		// To debug: cerr << "Debug messages..." << endl;
+
+		// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
+		out << "WAIT" << std::endl;
+	}
+}
 // ..\Codin\StatsDescription.cpp
 // #include "StatsDescription.h" begin
 // ..\Codin\StatsDescription.h
@@ -98,42 +152,43 @@ std::ostream& operator<<(std::ostream& out, const Vector& vec)
 // Main.cpp
 // #include "../Codin/EntityDescription.h" begin
 // #include "../Codin/EntityDescription.h" end
+// #include "../Codin/Game.h" begin
+// #include "../Codin/Game.h" end
 // #include "../Codin/StatsDescription.h" begin
 // #include "../Codin/StatsDescription.h" end
 // #include "../Codin/Vector.h" begin
 // #include "../Codin/Vector.h" end
 
 #include <iostream>
+#include <vector>
 
 int main()
 {
 	Vector base; // The corner of the map representing your base
 	std::cin >> base; std::cin.ignore();
-	int heroes_per_player; // Always 3
-	std::cin >> heroes_per_player; std::cin.ignore();
+	int heroesPerPlayer; // Always 3
+	std::cin >> heroesPerPlayer; std::cin.ignore();
+
+	Game game(heroesPerPlayer);
 
 	// game loop
-	while (1) {
-		for (int i = 0; i < 2; i++)
+	while (1)
+	{
+		StatsDescription myStatsDesc;
+		std::cin >> myStatsDesc; std::cin.ignore();
+		StatsDescription opponentStatsDesc;
+		std::cin >> opponentStatsDesc; std::cin.ignore();
+
+		int entitiesCount; // Amount of heroes and monsters you can see
+		std::cin >> entitiesCount; std::cin.ignore();
+		std::vector<EntityDescription> entitesDesc;
+		entitesDesc.reserve(entitiesCount);
+		for (int i = 0; i < entitiesCount; i++)
 		{
-			StatsDescription statsDesc;
-			std::cin >> statsDesc; std::cin.ignore();
-		}
-		int entity_count; // Amount of heroes and monsters you can see
-		std::cin >> entity_count; std::cin.ignore();
-		for (int i = 0; i < entity_count; i++)
-		{
-			EntityDescription entDesc;
-			std::cin >> entDesc; std::cin.ignore();
+			std::cin >> entitesDesc.emplace_back(); std::cin.ignore();
 		}
 
-		for (int i = 0; i < heroes_per_player; i++) {
-
-			// Write an action using cout. DON'T FORGET THE "<< endl"
-			// To debug: cerr << "Debug messages..." << endl;
-
-			// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
-			std::cout << "WAIT" << std::endl;
-		}
+		game.Tick(myStatsDesc, opponentStatsDesc, entitesDesc);
+		game.MakeMove(std::cout);
 	}
 }

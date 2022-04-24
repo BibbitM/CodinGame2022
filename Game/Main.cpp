@@ -1,38 +1,38 @@
 #include "../Codin/EntityDescription.h"
+#include "../Codin/Game.h"
 #include "../Codin/StatsDescription.h"
 #include "../Codin/Vector.h"
 
 #include <iostream>
+#include <vector>
 
 int main()
 {
 	Vector base; // The corner of the map representing your base
 	std::cin >> base; std::cin.ignore();
-	int heroes_per_player; // Always 3
-	std::cin >> heroes_per_player; std::cin.ignore();
+	int heroesPerPlayer; // Always 3
+	std::cin >> heroesPerPlayer; std::cin.ignore();
+
+	Game game(heroesPerPlayer);
 
 	// game loop
-	while (1) {
-		for (int i = 0; i < 2; i++)
+	while (1)
+	{
+		StatsDescription myStatsDesc;
+		std::cin >> myStatsDesc; std::cin.ignore();
+		StatsDescription opponentStatsDesc;
+		std::cin >> opponentStatsDesc; std::cin.ignore();
+
+		int entitiesCount; // Amount of heroes and monsters you can see
+		std::cin >> entitiesCount; std::cin.ignore();
+		std::vector<EntityDescription> entitesDesc;
+		entitesDesc.reserve(entitiesCount);
+		for (int i = 0; i < entitiesCount; i++)
 		{
-			StatsDescription statsDesc;
-			std::cin >> statsDesc; std::cin.ignore();
-		}
-		int entity_count; // Amount of heroes and monsters you can see
-		std::cin >> entity_count; std::cin.ignore();
-		for (int i = 0; i < entity_count; i++)
-		{
-			EntityDescription entDesc;
-			std::cin >> entDesc; std::cin.ignore();
+			std::cin >> entitesDesc.emplace_back(); std::cin.ignore();
 		}
 
-		for (int i = 0; i < heroes_per_player; i++) {
-
-			// Write an action using cout. DON'T FORGET THE "<< endl"
-			// To debug: cerr << "Debug messages..." << endl;
-
-			// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
-			std::cout << "WAIT" << std::endl;
-		}
+		game.Tick(myStatsDesc, opponentStatsDesc, entitesDesc);
+		game.MakeMove(std::cout);
 	}
 }
