@@ -7,6 +7,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="Controller.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vector.cpp" />
@@ -14,5 +15,6 @@
     <ClCompile Include="StatsDescription.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="Controller.cpp" />
   </ItemGroup>
 </Project>

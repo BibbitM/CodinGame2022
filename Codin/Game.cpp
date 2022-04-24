@@ -2,6 +2,7 @@
 
 #include "Entity.h"
 #include "EntityDescription.h"
+#include "Controller.h"
 #include "Utils.h"
 
 #include <algorithm>
@@ -25,7 +26,10 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 		{
 			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
 			if (entIt->second->GetType() == EntityType::MyHero)
+			{
+				entIt->second->SetController(std::make_unique<Controller>(entIt->second.get()));
 				myHeroes.push_back(entIt->second);
+			}
 		}
 	}
 
@@ -40,16 +44,14 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 		else
 			++it;
 	}
+
+	// Tick all heroes.
+	for (const auto& hero : myHeroes)
+		hero->GetController()->Tick(allEntities);
 }
 
 void Game::MakeMove(std::ostream& out) const
 {
-	for (int i = 0; i < numHeroes; i++) {
-
-		// Write an action using cout. DON'T FORGET THE "<< endl"
-		// To debug: cerr << "Debug messages..." << endl;
-
-		// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
-		out << "WAIT" << std::endl;
-	}
+	for (const auto& hero : myHeroes)
+		hero->GetController()->MakeMove(out);
 }

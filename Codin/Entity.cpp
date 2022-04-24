@@ -21,3 +21,8 @@ void Entity::Actualize(const EntityDescription& entityDesc, int frame)
 
 	lastFrame = frame;
 }
+
+void Entity::SetController(std::unique_ptr<Controller> controller)
+{
+	controllingBrain = std::move(controller);
+}

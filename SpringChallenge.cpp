@@ -1,7 +1,53 @@
+// ..\Codin\Controller.cpp
+// #include "Controller.h" begin
+// ..\Codin\Controller.h
+// #pragma once
+class Entity;
+
+#include <iosfwd>
+#include <memory>
+#include <unordered_map>
+
+class Controller
+{
+public:
+	Controller(Entity* owner) : owner(owner) { }
+
+	void Tick(const std::unordered_map<int, std::shared_ptr<Entity>>& allEntities);
+	void MakeMove(std::ostream& out) const;
+
+private:
+	Entity* owner{};
+};
+// #include "Controller.h" end
+
+// #include "Utils.h" begin
+// ..\Codin\Utils.h
+// #pragma once
+#define UNUSED(x) (void)(x)
+// #include "Utils.h" end
+
+#include <iostream>
+
+void Controller::Tick(const std::unordered_map<int, std::shared_ptr<Entity>>& allEntities)
+{
+	UNUSED(allEntities);
+}
+
+void Controller::MakeMove(std::ostream& out) const
+{
+	// Write an action using cout. DON'T FORGET THE "<< endl"
+	// To debug: cerr << "Debug messages..." << endl;
+
+	// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
+	out << "WAIT" << std::endl;
+}
 // ..\Codin\Entity.cpp
 // #include "Entity.h" begin
 // ..\Codin\Entity.h
 // #pragma once
+// #include "Controller.h" begin
+// #include "Controller.h" end
 // #include "Vector.h" begin
 // ..\Codin\Vector.h
 // #pragma once
@@ -31,6 +77,7 @@ std::ostream& operator<<(std::ostream& out, const Vector& vec);
 // #include "Vector.h" end
 
 #include <cstdint>
+#include <memory>
 
 struct EntityDescription;
 
@@ -54,10 +101,15 @@ public:
 	Entity(const EntityDescription& entityDesc, int frame);
 	void Actualize(const EntityDescription& entityDesc, int frame);
 
+	void SetController(std::unique_ptr<Controller> controller);
+	Controller* GetController() { return controllingBrain.get(); }
+
 	EntityType GetType() const { return type; }
 	int GetLastFrame() const { return lastFrame; }
 
 private:
+	std::unique_ptr<Controller> controllingBrain{};
+
 	Vector position{};
 	Vector velocity{};
 	int id{};
@@ -114,6 +166,11 @@ void Entity::Actualize(const EntityDescription& entityDesc, int frame)
 
 	lastFrame = frame;
 }
+
+void Entity::SetController(std::unique_ptr<Controller> controller)
+{
+	controllingBrain = std::move(controller);
+}
 // ..\Codin\EntityDescription.cpp
 // #include "EntityDescription.h" begin
 // #include "EntityDescription.h" end
@@ -162,10 +219,9 @@ private:
 // #include "Entity.h" end
 // #include "EntityDescription.h" begin
 // #include "EntityDescription.h" end
+// #include "Controller.h" begin
+// #include "Controller.h" end
 // #include "Utils.h" begin
-// ..\Codin\Utils.h
-// #pragma once
-#define UNUSED(x) (void)(x)
 // #include "Utils.h" end
 
 #include <algorithm>
@@ -189,7 +245,10 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 		{
 			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
 			if (entIt->second->GetType() == EntityType::MyHero)
+			{
+				entIt->second->SetController(std::make_unique<Controller>(entIt->second.get()));
 				myHeroes.push_back(entIt->second);
+			}
 		}
 	}
 
@@ -204,18 +263,16 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 		else
 			++it;
 	}
+
+	// Tick all heroes.
+	for (const auto& hero : myHeroes)
+		hero->GetController()->Tick(allEntities);
 }
 
 void Game::MakeMove(std::ostream& out) const
 {
-	for (int i = 0; i < numHeroes; i++) {
-
-		// Write an action using cout. DON'T FORGET THE "<< endl"
-		// To debug: cerr << "Debug messages..." << endl;
-
-		// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
-		out << "WAIT" << std::endl;
-	}
+	for (const auto& hero : myHeroes)
+		hero->GetController()->MakeMove(out);
 }
 // ..\Codin\StatsDescription.cpp
 // #include "StatsDescription.h" begin

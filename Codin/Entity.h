@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Controller.h"
 #include "Vector.h"
 
 #include <cstdint>
+#include <memory>
 
 struct EntityDescription;
 
@@ -26,10 +28,15 @@ public:
 	Entity(const EntityDescription& entityDesc, int frame);
 	void Actualize(const EntityDescription& entityDesc, int frame);
 
+	void SetController(std::unique_ptr<Controller> controller);
+	Controller* GetController() { return controllingBrain.get(); }
+
 	EntityType GetType() const { return type; }
 	int GetLastFrame() const { return lastFrame; }
 
 private:
+	std::unique_ptr<Controller> controllingBrain{};
+
 	Vector position{};
 	Vector velocity{};
 	int id{};
