@@ -55,6 +55,29 @@ std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 	in >> entDesc.id >> entDesc.type >> entDesc.pos >> entDesc.shield_life >> entDesc.is_controlled >> entDesc.health >> entDesc.vel >> entDesc.near_base >> entDesc.threat_for;
 	return in;
 }
+// ..\Codin\StatsDescription.cpp
+// #include "StatsDescription.h" begin
+// ..\Codin\StatsDescription.h
+// #pragma once
+#include <iosfwd>
+
+struct StatsDescription
+{
+	int health; // Your base health
+	int mana; // Ignore in the first league; Spend ten mana to cast a spell
+};
+
+std::istream& operator>>(std::istream& in, StatsDescription& statsDesc);
+
+// #include "StatsDescription.h" end
+
+#include <iostream>
+
+std::istream& operator>>(std::istream& in, StatsDescription& statsDesc)
+{
+	in >> statsDesc.health >> statsDesc.mana;
+	return in;
+}
 // ..\Codin\Vector.cpp
 // #include "Vector.h" begin
 // #include "Vector.h" end
@@ -75,6 +98,8 @@ std::ostream& operator<<(std::ostream& out, const Vector& vec)
 // Main.cpp
 // #include "../Codin/EntityDescription.h" begin
 // #include "../Codin/EntityDescription.h" end
+// #include "../Codin/StatsDescription.h" begin
+// #include "../Codin/StatsDescription.h" end
 // #include "../Codin/Vector.h" begin
 // #include "../Codin/Vector.h" end
 
@@ -89,10 +114,10 @@ int main()
 
 	// game loop
 	while (1) {
-		for (int i = 0; i < 2; i++) {
-			int health; // Your base health
-			int mana; // Ignore in the first league; Spend ten mana to cast a spell
-			std::cin >> health >> mana; std::cin.ignore();
+		for (int i = 0; i < 2; i++)
+		{
+			StatsDescription statsDesc;
+			std::cin >> statsDesc; std::cin.ignore();
 		}
 		int entity_count; // Amount of heroes and monsters you can see
 		std::cin >> entity_count; std::cin.ignore();

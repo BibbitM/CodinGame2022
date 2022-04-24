@@ -1,4 +1,5 @@
 #include "../Codin/EntityDescription.h"
+#include "../Codin/StatsDescription.h"
 #include "../Codin/Vector.h"
 
 #include <iostream>
@@ -12,10 +13,10 @@ int main()
 
 	// game loop
 	while (1) {
-		for (int i = 0; i < 2; i++) {
-			int health; // Your base health
-			int mana; // Ignore in the first league; Spend ten mana to cast a spell
-			std::cin >> health >> mana; std::cin.ignore();
+		for (int i = 0; i < 2; i++)
+		{
+			StatsDescription statsDesc;
+			std::cin >> statsDesc; std::cin.ignore();
 		}
 		int entity_count; // Amount of heroes and monsters you can see
 		std::cin >> entity_count; std::cin.ignore();

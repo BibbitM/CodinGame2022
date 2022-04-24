@@ -3,9 +3,11 @@
   <ItemGroup>
     <ClInclude Include="Vector.h" />
     <ClInclude Include="EntityDescription.h" />
+    <ClInclude Include="StatsDescription.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vector.cpp" />
     <ClCompile Include="EntityDescription.cpp" />
+    <ClCompile Include="StatsDescription.cpp" />
   </ItemGroup>
 </Project>
