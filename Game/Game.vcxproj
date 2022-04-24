@@ -95,6 +95,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>..\Merge\bin\$(Configuration)\net6.0-windows\Merge.exe Main.cpp ..\Codin ..\SpringChallenge.cpp</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Generate SpringChallenge.cpp</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -113,6 +119,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>..\Merge\bin\$(Configuration)\net6.0-windows\Merge.exe Main.cpp ..\Codin ..\SpringChallenge.cpp</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Generate SpringChallenge.cpp</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -127,6 +139,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>..\Merge\bin\$(Configuration)\net6.0-windows\Merge.exe Main.cpp ..\Codin ..\SpringChallenge.cpp</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Generate SpringChallenge.cpp</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -145,6 +163,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>..\Merge\bin\$(Configuration)\net6.0-windows\Merge.exe Main.cpp ..\Codin ..\SpringChallenge.cpp</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Generate SpringChallenge.cpp</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />

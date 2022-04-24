@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Merge": {
+      "commandName": "Project",
+      "commandLineArgs": "..\\..\\..\\..\\Game\\Main.cpp ..\\..\\..\\..\\Codin ..\\..\\..\\..\\SpringChallenge.cpp"
+    }
+  }
+}
