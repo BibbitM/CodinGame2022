@@ -1,9 +1,3 @@
-// ..\Codin\Codin.cpp
-int Codin()
-{
-	return 0;
-}
-// ..\Codin\Vector.cpp
 #include "Vector.h"
 
 #include <iostream>
@@ -18,11 +12,4 @@ std::ostream& operator<<(std::ostream& out, const Vector& vec)
 {
 	out << vec.x << ' ' << vec.y << ' ' << vec.z;
 	return out;
-}
-// Main.cpp
-extern int Codin();
-
-int main()
-{
-	return Codin();
 }
