@@ -1,7 +1,11 @@
 #pragma once
 
 #include <iosfwd>
+#include <memory>
+#include <unordered_map>
 #include <vector>
+
+class Entity;
 
 struct EntityDescription;
 struct StatsDescription;
@@ -18,6 +22,8 @@ public:
 	void MakeMove(std::ostream& out) const;
 
 private:
+	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
+	std::vector<std::shared_ptr<Entity>> myHeroes;
 	int numHeroes{};
+	int frame{};
 };
-

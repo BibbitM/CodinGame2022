@@ -1,7 +1,11 @@
 #include "Game.h"
 
+#include "Entity.h"
+#include "EntityDescription.h"
 #include "Utils.h"
 
+#include <algorithm>
+#include <cassert>
 #include <iostream>
 
 void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc)
@@ -9,7 +13,33 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	UNUSED(myStats);
 	UNUSED(opponentsStats);
 
-	UNUSED(entitiesDesc);
+	++frame;
+
+	// Actualize all entities.
+	for (const auto& entDesc : entitiesDesc)
+	{
+		auto entIt = allEntities.find(entDesc.id);
+		if (entIt != allEntities.end())
+			entIt->second->Actualize(entDesc, frame);
+		else
+		{
+			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
+			if (entIt->second->GetType() == EntityType::MyHero)
+				myHeroes.push_back(entIt->second);
+		}
+	}
+
+	// Remove no longer valid entities.
+	for (auto it = allEntities.begin(); it != allEntities.end(); /* inside the loop */)
+	{
+		if (it->second->GetLastFrame() != frame)
+		{
+			assert(it->second->GetType() != EntityType::MyHero);
+			it = allEntities.erase(it);
+		}
+		else
+			++it;
+	}
 }
 
 void Game::MakeMove(std::ostream& out) const

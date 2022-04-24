@@ -6,11 +6,13 @@
     <ClInclude Include="StatsDescription.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="Entity.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vector.cpp" />
     <ClCompile Include="EntityDescription.cpp" />
     <ClCompile Include="StatsDescription.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Entity.cpp" />
   </ItemGroup>
 </Project>

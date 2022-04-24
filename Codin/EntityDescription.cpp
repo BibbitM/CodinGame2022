@@ -4,6 +4,6 @@
 
 std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 {
-	in >> entDesc.id >> entDesc.type >> entDesc.pos >> entDesc.shield_life >> entDesc.is_controlled >> entDesc.health >> entDesc.vel >> entDesc.near_base >> entDesc.threat_for;
+	in >> entDesc.id >> entDesc.type >> entDesc.pos >> entDesc.shieldLife >> entDesc.isControlled >> entDesc.health >> entDesc.vel >> entDesc.nearBase >> entDesc.threatFor;
 	return in;
 }

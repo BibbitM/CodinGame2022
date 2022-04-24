@@ -1,6 +1,6 @@
-// ..\Codin\EntityDescription.cpp
-// #include "EntityDescription.h" begin
-// ..\Codin\EntityDescription.h
+// ..\Codin\Entity.cpp
+// #include "Entity.h" begin
+// ..\Codin\Entity.h
 // #pragma once
 // #include "Vector.h" begin
 // ..\Codin\Vector.h
@@ -30,6 +30,53 @@ std::istream& operator>>(std::istream& in, Vector& vec);
 std::ostream& operator<<(std::ostream& out, const Vector& vec);
 // #include "Vector.h" end
 
+#include <cstdint>
+
+struct EntityDescription;
+
+enum class EntityType : uint8_t
+{
+	Monster,
+	MyHero,
+	OpponentsHero,
+};
+
+enum class ThreatFor : uint8_t
+{
+	None,
+	MyBase,
+	OpponentsBase,
+};
+
+class Entity
+{
+public:
+	Entity(const EntityDescription& entityDesc, int frame);
+	void Actualize(const EntityDescription& entityDesc, int frame);
+
+	EntityType GetType() const { return type; }
+	int GetLastFrame() const { return lastFrame; }
+
+private:
+	Vector position{};
+	Vector velocity{};
+	int id{};
+	int shieldLife{};
+	int health{};
+	int lastFrame{};
+	EntityType type{};
+	ThreatFor threatFor{};
+	bool isControlled{};
+	bool isNearBase{};
+};
+// #include "Entity.h" end
+
+// #include "EntityDescription.h" begin
+// ..\Codin\EntityDescription.h
+// #pragma once
+// #include "Vector.h" begin
+// #include "Vector.h" end
+
 #include <iosfwd>
 
 struct EntityDescription
@@ -37,22 +84,45 @@ struct EntityDescription
 	int id; // Unique identifier
 	int type; // 0=monster, 1=your hero, 2=opponent hero
 	Vector pos; // Position of this entity
-	int shield_life; // Ignore for this league; Count down until shield spell fades
-	int is_controlled; // Ignore for this league; Equals 1 when this entity is under a control spell
+	int shieldLife; // Ignore for this league; Count down until shield spell fades
+	int isControlled; // Ignore for this league; Equals 1 when this entity is under a control spell
 	int health; // Remaining health of this monster
 	Vector vel; // Trajectory of this monster
-	int near_base; // 0=monster with no target yet, 1=monster targeting a base
-	int threat_for; // Given this monster's trajectory, is it a threat to 1=your base, 2=your opponent's base, 0=neither
+	int nearBase; // 0=monster with no target yet, 1=monster targeting a base
+	int threatFor; // Given this monster's trajectory, is it a threat to 1=your base, 2=your opponent's base, 0=neither
 };
 
 std::istream& operator>>(std::istream& in, EntityDescription& entDesc);
+// #include "EntityDescription.h" end
+
+Entity::Entity(const EntityDescription& entityDesc, int frame)
+{
+	Actualize(entityDesc, frame);
+}
+
+void Entity::Actualize(const EntityDescription& entityDesc, int frame)
+{
+	position = entityDesc.pos;
+	velocity = entityDesc.vel;
+	id = entityDesc.id;
+	shieldLife = entityDesc.shieldLife;
+	health = entityDesc.health;
+	type = static_cast<EntityType>(entityDesc.type);
+	threatFor = static_cast<ThreatFor>(entityDesc.threatFor);
+	isControlled = entityDesc.isControlled != 0;
+	isNearBase = entityDesc.nearBase != 0;
+
+	lastFrame = frame;
+}
+// ..\Codin\EntityDescription.cpp
+// #include "EntityDescription.h" begin
 // #include "EntityDescription.h" end
 
 #include <iostream>
 
 std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 {
-	in >> entDesc.id >> entDesc.type >> entDesc.pos >> entDesc.shield_life >> entDesc.is_controlled >> entDesc.health >> entDesc.vel >> entDesc.near_base >> entDesc.threat_for;
+	in >> entDesc.id >> entDesc.type >> entDesc.pos >> entDesc.shieldLife >> entDesc.isControlled >> entDesc.health >> entDesc.vel >> entDesc.nearBase >> entDesc.threatFor;
 	return in;
 }
 // ..\Codin\Game.cpp
@@ -60,7 +130,11 @@ std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 // ..\Codin\Game.h
 // #pragma once
 #include <iosfwd>
+#include <memory>
+#include <unordered_map>
 #include <vector>
+
+class Entity;
 
 struct EntityDescription;
 struct StatsDescription;
@@ -77,17 +151,25 @@ public:
 	void MakeMove(std::ostream& out) const;
 
 private:
+	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
+	std::vector<std::shared_ptr<Entity>> myHeroes;
 	int numHeroes{};
+	int frame{};
 };
-
 // #include "Game.h" end
 
+// #include "Entity.h" begin
+// #include "Entity.h" end
+// #include "EntityDescription.h" begin
+// #include "EntityDescription.h" end
 // #include "Utils.h" begin
 // ..\Codin\Utils.h
 // #pragma once
 #define UNUSED(x) (void)(x)
 // #include "Utils.h" end
 
+#include <algorithm>
+#include <cassert>
 #include <iostream>
 
 void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc)
@@ -95,7 +177,33 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	UNUSED(myStats);
 	UNUSED(opponentsStats);
 
-	UNUSED(entitiesDesc);
+	++frame;
+
+	// Actualize all entities.
+	for (const auto& entDesc : entitiesDesc)
+	{
+		auto entIt = allEntities.find(entDesc.id);
+		if (entIt != allEntities.end())
+			entIt->second->Actualize(entDesc, frame);
+		else
+		{
+			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
+			if (entIt->second->GetType() == EntityType::MyHero)
+				myHeroes.push_back(entIt->second);
+		}
+	}
+
+	// Remove no longer valid entities.
+	for (auto it = allEntities.begin(); it != allEntities.end(); /* inside the loop */)
+	{
+		if (it->second->GetLastFrame() != frame)
+		{
+			assert(it->second->GetType() != EntityType::MyHero);
+			it = allEntities.erase(it);
+		}
+		else
+			++it;
+	}
 }
 
 void Game::MakeMove(std::ostream& out) const
