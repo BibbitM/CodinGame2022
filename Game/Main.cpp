@@ -13,7 +13,7 @@ int main()
 	int heroesPerPlayer; // Always 3
 	std::cin >> heroesPerPlayer; std::cin.ignore();
 
-	Game game(heroesPerPlayer);
+	Game game(base, heroesPerPlayer);
 
 	// game loop
 	while (1)

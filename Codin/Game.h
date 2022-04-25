@@ -15,8 +15,8 @@ struct StatsDescription;
 class Game
 {
 public:
-	Game(int numHeroes)
-		: numHeroes(numHeroes)
+	Game(const Vector& basePosition, int numHeroes)
+		: basePosition(basePosition), numHeroes(numHeroes)
 	{ }
 	Game(const Game&) = delete;
 

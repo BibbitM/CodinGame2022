@@ -30,14 +30,6 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			{
 				entIt->second->SetController(std::make_unique<Controller>(entIt->second.get()));
 				myHeroes.push_back(entIt->second);
-
-				// Determine base position
-				if (frame == 1)
-				{
-					const Vector& heroPosition = entIt->second->GetPosition();
-					if (DistanceSqr(heroPosition, Rules::mapSize) < DistanceSqr(heroPosition, Vector{}))
-						basePosition = Rules::mapSize;
-				}
 			}
 		}
 	}

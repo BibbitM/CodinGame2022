@@ -135,8 +135,8 @@ struct StatsDescription;
 class Game
 {
 public:
-	Game(int numHeroes)
-		: numHeroes(numHeroes)
+	Game(const Vector& basePosition, int numHeroes)
+		: basePosition(basePosition), numHeroes(numHeroes)
 	{ }
 	Game(const Game&) = delete;
 
@@ -312,14 +312,6 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			{
 				entIt->second->SetController(std::make_unique<Controller>(entIt->second.get()));
 				myHeroes.push_back(entIt->second);
-
-				// Determine base position
-				if (frame == 1)
-				{
-					const Vector& heroPosition = entIt->second->GetPosition();
-					if (DistanceSqr(heroPosition, Rules::mapSize) < DistanceSqr(heroPosition, Vector{}))
-						basePosition = Rules::mapSize;
-				}
 			}
 		}
 	}
@@ -403,7 +395,7 @@ int main()
 	int heroesPerPlayer; // Always 3
 	std::cin >> heroesPerPlayer; std::cin.ignore();
 
-	Game game(heroesPerPlayer);
+	Game game(base, heroesPerPlayer);
 
 	// game loop
 	while (1)
