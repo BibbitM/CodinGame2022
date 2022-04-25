@@ -1,9 +1,9 @@
-// ..\Codin\Controller.cpp
-// #include "Controller.h" begin
-// ..\Codin\Controller.h
+#pragma region ..\Codin\Controller.cpp
+// #include "Controller.h"
+#pragma region ..\Codin\Controller.h
 // #pragma once
-// #include "Vector.h" begin
-// ..\Codin\Vector.h
+// #include "Vector.h"
+#pragma region ..\Codin\Vector.h
 // #pragma once
 #include <iosfwd>
 
@@ -38,7 +38,7 @@ inline int DistanceSqr(const Vector& a, const Vector& b)
 
 std::istream& operator>>(std::istream& in, Vector& vec);
 std::ostream& operator<<(std::ostream& out, const Vector& vec);
-// #include "Vector.h" end
+#pragma endregion ..\Codin\Vector.h
 
 #include <iosfwd>
 #include <memory>
@@ -58,15 +58,13 @@ private:
 	Entity* owner{};
 	Vector targetPosition{};
 };
-// #include "Controller.h" end
+#pragma endregion ..\Codin\Controller.h
 
-// #include "Entity.h" begin
-// ..\Codin\Entity.h
+// #include "Entity.h"
+#pragma region ..\Codin\Entity.h
 // #pragma once
-// #include "Controller.h" begin
-// #include "Controller.h" end
-// #include "Vector.h" begin
-// #include "Vector.h" end
+// #include "Controller.h"
+// #include "Vector.h"
 
 #include <cstdint>
 #include <memory>
@@ -118,12 +116,11 @@ private:
 	bool isControlled{};
 	bool isNearBase{};
 };
-// #include "Entity.h" end
-// #include "Game.h" begin
-// ..\Codin\Game.h
+#pragma endregion ..\Codin\Entity.h
+// #include "Game.h"
+#pragma region ..\Codin\Game.h
 // #pragma once
-// #include "Vector.h" begin
-// #include "Vector.h" end
+// #include "Vector.h"
 
 #include <iosfwd>
 #include <memory>
@@ -157,7 +154,7 @@ private:
 	int numHeroes{};
 	int frame{};
 };
-// #include "Game.h" end
+#pragma endregion ..\Codin\Game.h
 
 #include <algorithm>
 #include <iostream>
@@ -206,15 +203,14 @@ void Controller::MakeMove(std::ostream& out) const
 	else
 		out << "MOVE " << targetPosition << std::endl;
 }
-// ..\Codin\Entity.cpp
-// #include "Entity.h" begin
-// #include "Entity.h" end
+#pragma endregion ..\Codin\Controller.cpp
+#pragma region ..\Codin\Entity.cpp
+// #include "Entity.h"
 
-// #include "EntityDescription.h" begin
-// ..\Codin\EntityDescription.h
+// #include "EntityDescription.h"
+#pragma region ..\Codin\EntityDescription.h
 // #pragma once
-// #include "Vector.h" begin
-// #include "Vector.h" end
+// #include "Vector.h"
 
 #include <iosfwd>
 
@@ -232,7 +228,7 @@ struct EntityDescription
 };
 
 std::istream& operator>>(std::istream& in, EntityDescription& entDesc);
-// #include "EntityDescription.h" end
+#pragma endregion ..\Codin\EntityDescription.h
 
 Entity::Entity(const EntityDescription& entityDesc, int frame)
 {
@@ -258,9 +254,9 @@ void Entity::SetController(std::unique_ptr<Controller> controller)
 {
 	controllingBrain = std::move(controller);
 }
-// ..\Codin\EntityDescription.cpp
-// #include "EntityDescription.h" begin
-// #include "EntityDescription.h" end
+#pragma endregion ..\Codin\Entity.cpp
+#pragma region ..\Codin\EntityDescription.cpp
+// #include "EntityDescription.h"
 
 #include <iostream>
 
@@ -269,32 +265,28 @@ std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 	in >> entDesc.id >> entDesc.type >> entDesc.pos >> entDesc.shieldLife >> entDesc.isControlled >> entDesc.health >> entDesc.vel >> entDesc.nearBase >> entDesc.threatFor;
 	return in;
 }
-// ..\Codin\Game.cpp
-// #include "Game.h" begin
-// #include "Game.h" end
+#pragma endregion ..\Codin\EntityDescription.cpp
+#pragma region ..\Codin\Game.cpp
+// #include "Game.h"
 
-// #include "Controller.h" begin
-// #include "Controller.h" end
-// #include "Entity.h" begin
-// #include "Entity.h" end
-// #include "EntityDescription.h" begin
-// #include "EntityDescription.h" end
-// #include "Rules.h" begin
-// ..\Codin\Rules.h
+// #include "Controller.h"
+// #include "Entity.h"
+// #include "EntityDescription.h"
+// #include "Rules.h"
+#pragma region ..\Codin\Rules.h
 // #pragma once
-// #include "Vector.h" begin
-// #include "Vector.h" end
+// #include "Vector.h"
 
 struct Rules
 {
 	static constexpr Vector mapSize{ 17630, 9000 };
 };
-// #include "Rules.h" end
-// #include "Utils.h" begin
-// ..\Codin\Utils.h
+#pragma endregion ..\Codin\Rules.h
+// #include "Utils.h"
+#pragma region ..\Codin\Utils.h
 // #pragma once
 #define UNUSED(x) (void)(x)
-// #include "Utils.h" end
+#pragma endregion ..\Codin\Utils.h
 
 #include <algorithm>
 #include <cassert>
@@ -354,9 +346,10 @@ void Game::MakeMove(std::ostream& out) const
 	for (const auto& hero : myHeroes)
 		hero->GetController()->MakeMove(out);
 }
-// ..\Codin\StatsDescription.cpp
-// #include "StatsDescription.h" begin
-// ..\Codin\StatsDescription.h
+#pragma endregion ..\Codin\Game.cpp
+#pragma region ..\Codin\StatsDescription.cpp
+// #include "StatsDescription.h"
+#pragma region ..\Codin\StatsDescription.h
 // #pragma once
 #include <iosfwd>
 
@@ -367,7 +360,7 @@ struct StatsDescription
 };
 
 std::istream& operator>>(std::istream& in, StatsDescription& statsDesc);
-// #include "StatsDescription.h" end
+#pragma endregion ..\Codin\StatsDescription.h
 
 #include <iostream>
 
@@ -376,9 +369,9 @@ std::istream& operator>>(std::istream& in, StatsDescription& statsDesc)
 	in >> statsDesc.health >> statsDesc.mana;
 	return in;
 }
-// ..\Codin\Vector.cpp
-// #include "Vector.h" begin
-// #include "Vector.h" end
+#pragma endregion ..\Codin\StatsDescription.cpp
+#pragma region ..\Codin\Vector.cpp
+// #include "Vector.h"
 
 #include <iostream>
 
@@ -393,15 +386,12 @@ std::ostream& operator<<(std::ostream& out, const Vector& vec)
 	out << vec.x << ' ' << vec.y;
 	return out;
 }
-// Main.cpp
-// #include "../Codin/EntityDescription.h" begin
-// #include "../Codin/EntityDescription.h" end
-// #include "../Codin/Game.h" begin
-// #include "../Codin/Game.h" end
-// #include "../Codin/StatsDescription.h" begin
-// #include "../Codin/StatsDescription.h" end
-// #include "../Codin/Vector.h" begin
-// #include "../Codin/Vector.h" end
+#pragma endregion ..\Codin\Vector.cpp
+#pragma region Main.cpp
+// #include "../Codin/EntityDescription.h"
+// #include "../Codin/Game.h"
+// #include "../Codin/StatsDescription.h"
+// #include "../Codin/Vector.h"
 
 #include <iostream>
 #include <vector>
@@ -436,3 +426,4 @@ int main()
 		game.MakeMove(std::cout);
 	}
 }
+#pragma endregion Main.cpp

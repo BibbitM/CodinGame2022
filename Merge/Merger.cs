@@ -40,15 +40,14 @@ namespace Merge
             string oncePattern = @"^\s*#\s*pragma\s+once";
             Regex onceRgx = new Regex(oncePattern);
 
-            outFile.WriteLine($"// {fileName}");
+            outFile.WriteLine($"#pragma region {fileName}");
             foreach (string line in fileLines)
             {
                 var incMatch = incRgx.Match(line);
                 if (incMatch.Success)
                 {
-                    outFile.WriteLine($"// {line} begin");
+                    outFile.WriteLine($"// {line}");
                     WriteInclude(outFile, fileName, incMatch.Groups[1].Value);
-                    outFile.WriteLine($"// {line} end");
                     continue;
                 }
 
@@ -60,6 +59,7 @@ namespace Merge
 
                 outFile.WriteLine(line);
             }
+            outFile.WriteLine($"#pragma endregion {fileName}");
         }
 
         private void WriteInclude(StreamWriter outFile, string fileName, string includeFileName)
