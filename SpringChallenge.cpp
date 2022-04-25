@@ -211,6 +211,8 @@ private:
 	Vector basePosition{};
 	int numHeroes{};
 	int frame{};
+	int health{};
+	int mana{};
 };
 #pragma endregion ..\Codin\Game.h
 
@@ -281,6 +283,19 @@ struct Rules
 	static constexpr int spellControlRange = 2200;
 };
 #pragma endregion ..\Codin\Rules.h
+// #include "StatsDescription.h"
+#pragma region ..\Codin\StatsDescription.h
+// #pragma once
+#include <iosfwd>
+
+struct StatsDescription
+{
+	int health; // Your base health
+	int mana; // Ignore in the first league; Spend ten mana to cast a spell
+};
+
+std::istream& operator>>(std::istream& in, StatsDescription& statsDesc);
+#pragma endregion ..\Codin\StatsDescription.h
 // #include "Utils.h"
 #pragma region ..\Codin\Utils.h
 // #pragma once
@@ -293,10 +308,12 @@ struct Rules
 
 void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc)
 {
-	UNUSED(myStats);
 	UNUSED(opponentsStats);
 
 	++frame;
+
+	health = myStats.health;
+	mana = myStats.mana;
 
 	// Actualize all entities.
 	for (const auto& entDesc : entitiesDesc)
@@ -421,18 +438,6 @@ void PeasantController::MakeMove(std::ostream& out) const
 #pragma endregion ..\Codin\PeasantController.cpp
 #pragma region ..\Codin\StatsDescription.cpp
 // #include "StatsDescription.h"
-#pragma region ..\Codin\StatsDescription.h
-// #pragma once
-#include <iosfwd>
-
-struct StatsDescription
-{
-	int health; // Your base health
-	int mana; // Ignore in the first league; Spend ten mana to cast a spell
-};
-
-std::istream& operator>>(std::istream& in, StatsDescription& statsDesc);
-#pragma endregion ..\Codin\StatsDescription.h
 
 #include <iostream>
 

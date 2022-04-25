@@ -35,4 +35,6 @@ private:
 	Vector basePosition{};
 	int numHeroes{};
 	int frame{};
+	int health{};
+	int mana{};
 };

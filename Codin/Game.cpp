@@ -5,6 +5,7 @@
 #include "Entity.h"
 #include "EntityDescription.h"
 #include "Rules.h"
+#include "StatsDescription.h"
 #include "Utils.h"
 
 #include <algorithm>
@@ -13,10 +14,12 @@
 
 void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc)
 {
-	UNUSED(myStats);
 	UNUSED(opponentsStats);
 
 	++frame;
+
+	health = myStats.health;
+	mana = myStats.mana;
 
 	// Actualize all entities.
 	for (const auto& entDesc : entitiesDesc)
