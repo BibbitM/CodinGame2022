@@ -1,4 +1,4 @@
-#include "Controller.h"
+#include "PeasantController.h"
 
 #include "Entity.h"
 #include "Game.h"
@@ -7,7 +7,7 @@
 #include <iostream>
 #include <vector>
 
-void Controller::Tick(const Game& game)
+void PeasantController::Tick(const Game& game)
 {
 	std::vector<Entity*> myEnemies;
 	myEnemies.reserve(game.GetAllEntities().size());
@@ -38,15 +38,12 @@ void Controller::Tick(const Game& game)
 		targetPosition = owner->GetPosition();
 }
 
-void Controller::MakeMove(std::ostream& out) const
+void PeasantController::MakeMove(std::ostream& out) const
 {
-	// Write an action using cout. DON'T FORGET THE "<< endl"
-	// To debug: cerr << "Debug messages..." << endl;
-
-	// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
-
 	if (owner->GetPosition() == targetPosition)
-		out << "WAIT" << std::endl;
+		out << "WAIT";
 	else
-		out << "MOVE " << targetPosition << std::endl;
+		out << "MOVE " << targetPosition;
+
+	out << " Peasant" << std::endl;
 }

@@ -1,6 +1,6 @@
 #include "Game.h"
 
-#include "Controller.h"
+#include "PeasantController.h"
 #include "Entity.h"
 #include "EntityDescription.h"
 #include "Rules.h"
@@ -28,7 +28,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
 			if (entIt->second->GetType() == EntityType::MyHero)
 			{
-				entIt->second->SetController(std::make_unique<Controller>(entIt->second.get()));
+				entIt->second->SetController(std::make_unique<PeasantController>(entIt->second.get()));
 				myHeroes.push_back(entIt->second);
 			}
 		}

@@ -1,9 +1,6 @@
 #pragma once
 
-#include "Vector.h"
-
 #include <iosfwd>
-#include <memory>
 
 class Entity;
 class Game;
@@ -12,11 +9,11 @@ class Controller
 {
 public:
 	Controller(Entity* owner) : owner(owner) { }
+	virtual ~Controller() { }
 
-	void Tick(const Game& game);
-	void MakeMove(std::ostream& out) const;
+	virtual void Tick(const Game& game) = 0;
+	virtual void MakeMove(std::ostream& out) const = 0;
 
-private:
+protected:
 	Entity* owner{};
-	Vector targetPosition{};
 };

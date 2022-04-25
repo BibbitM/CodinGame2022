@@ -1,7 +1,28 @@
-#pragma region ..\Codin\Controller.cpp
+#pragma region ..\Codin\Entity.cpp
+// #include "Entity.h"
+#pragma region ..\Codin\Entity.h
+// #pragma once
 // #include "Controller.h"
 #pragma region ..\Codin\Controller.h
 // #pragma once
+#include <iosfwd>
+
+class Entity;
+class Game;
+
+class Controller
+{
+public:
+	Controller(Entity* owner) : owner(owner) { }
+	virtual ~Controller() { }
+
+	virtual void Tick(const Game& game) = 0;
+	virtual void MakeMove(std::ostream& out) const = 0;
+
+protected:
+	Entity* owner{};
+};
+#pragma endregion ..\Codin\Controller.h
 // #include "Vector.h"
 #pragma region ..\Codin\Vector.h
 // #pragma once
@@ -39,32 +60,6 @@ inline int DistanceSqr(const Vector& a, const Vector& b)
 std::istream& operator>>(std::istream& in, Vector& vec);
 std::ostream& operator<<(std::ostream& out, const Vector& vec);
 #pragma endregion ..\Codin\Vector.h
-
-#include <iosfwd>
-#include <memory>
-
-class Entity;
-class Game;
-
-class Controller
-{
-public:
-	Controller(Entity* owner) : owner(owner) { }
-
-	void Tick(const Game& game);
-	void MakeMove(std::ostream& out) const;
-
-private:
-	Entity* owner{};
-	Vector targetPosition{};
-};
-#pragma endregion ..\Codin\Controller.h
-
-// #include "Entity.h"
-#pragma region ..\Codin\Entity.h
-// #pragma once
-// #include "Controller.h"
-// #include "Vector.h"
 
 #include <cstdint>
 #include <memory>
@@ -117,95 +112,6 @@ private:
 	bool isNearBase{};
 };
 #pragma endregion ..\Codin\Entity.h
-// #include "Game.h"
-#pragma region ..\Codin\Game.h
-// #pragma once
-// #include "Vector.h"
-
-#include <iosfwd>
-#include <memory>
-#include <unordered_map>
-#include <vector>
-
-class Entity;
-
-struct EntityDescription;
-struct StatsDescription;
-
-class Game
-{
-public:
-	Game(const Vector& basePosition, int numHeroes)
-		: basePosition(basePosition), numHeroes(numHeroes)
-	{ }
-	Game(const Game&) = delete;
-
-	void Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc);
-
-	void MakeMove(std::ostream& out) const;
-
-	const std::unordered_map<int, std::shared_ptr<Entity>>& GetAllEntities() const { return allEntities; }
-	const Vector& GetBasePosition() const { return basePosition; }
-
-private:
-	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
-	std::vector<std::shared_ptr<Entity>> myHeroes;
-	Vector basePosition{};
-	int numHeroes{};
-	int frame{};
-};
-#pragma endregion ..\Codin\Game.h
-
-#include <algorithm>
-#include <iostream>
-#include <vector>
-
-void Controller::Tick(const Game& game)
-{
-	std::vector<Entity*> myEnemies;
-	myEnemies.reserve(game.GetAllEntities().size());
-	std::vector<Entity*> otherEnemies;
-	otherEnemies.reserve(game.GetAllEntities().size());
-
-	for (const auto& ent : game.GetAllEntities())
-	{
-		if (ent.second->GetThreatFor() == ThreatFor::MyBase)
-			myEnemies.push_back(ent.second.get());
-		else if (ent.second->GetType() == EntityType::Monster)
-			otherEnemies.push_back(ent.second.get());
-	}
-
-	auto compareEnemyDist = [&game](Entity* a, Entity* b) { return DistanceSqr(a->GetTargetPosition(), game.GetBasePosition()) < DistanceSqr(b->GetTargetPosition(), game.GetBasePosition()); };
-
-	if (!myEnemies.empty())
-	{
-		std::sort(myEnemies.begin(), myEnemies.end(), compareEnemyDist);
-		targetPosition = myEnemies.front()->GetTargetPosition();
-	}
-	else if (!otherEnemies.empty())
-	{
-		std::sort(otherEnemies.begin(), otherEnemies.end(), compareEnemyDist);
-		targetPosition = otherEnemies.front()->GetTargetPosition();
-	}
-	else
-		targetPosition = owner->GetPosition();
-}
-
-void Controller::MakeMove(std::ostream& out) const
-{
-	// Write an action using cout. DON'T FORGET THE "<< endl"
-	// To debug: cerr << "Debug messages..." << endl;
-
-	// In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
-
-	if (owner->GetPosition() == targetPosition)
-		out << "WAIT" << std::endl;
-	else
-		out << "MOVE " << targetPosition << std::endl;
-}
-#pragma endregion ..\Codin\Controller.cpp
-#pragma region ..\Codin\Entity.cpp
-// #include "Entity.h"
 
 // #include "EntityDescription.h"
 #pragma region ..\Codin\EntityDescription.h
@@ -268,8 +174,65 @@ std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 #pragma endregion ..\Codin\EntityDescription.cpp
 #pragma region ..\Codin\Game.cpp
 // #include "Game.h"
+#pragma region ..\Codin\Game.h
+// #pragma once
+// #include "Vector.h"
 
+#include <iosfwd>
+#include <memory>
+#include <unordered_map>
+#include <vector>
+
+class Entity;
+
+struct EntityDescription;
+struct StatsDescription;
+
+class Game
+{
+public:
+	Game(const Vector& basePosition, int numHeroes)
+		: basePosition(basePosition), numHeroes(numHeroes)
+	{ }
+	Game(const Game&) = delete;
+
+	void Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc);
+
+	void MakeMove(std::ostream& out) const;
+
+	const std::unordered_map<int, std::shared_ptr<Entity>>& GetAllEntities() const { return allEntities; }
+	const Vector& GetBasePosition() const { return basePosition; }
+
+private:
+	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
+	std::vector<std::shared_ptr<Entity>> myHeroes;
+	Vector basePosition{};
+	int numHeroes{};
+	int frame{};
+};
+#pragma endregion ..\Codin\Game.h
+
+// #include "PeasantController.h"
+#pragma region ..\Codin\PeasantController.h
+// #pragma once
 // #include "Controller.h"
+
+// #include "Vector.h"
+
+#include <iosfwd>
+
+class PeasantController : public Controller
+{
+public:
+	PeasantController(Entity* owner) : Controller(owner) { }
+
+	virtual void Tick(const Game& game) override;
+	virtual void MakeMove(std::ostream& out) const override;
+
+protected:
+	Vector targetPosition{};
+};
+#pragma endregion ..\Codin\PeasantController.h
 // #include "Entity.h"
 // #include "EntityDescription.h"
 // #include "Rules.h"
@@ -310,7 +273,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
 			if (entIt->second->GetType() == EntityType::MyHero)
 			{
-				entIt->second->SetController(std::make_unique<Controller>(entIt->second.get()));
+				entIt->second->SetController(std::make_unique<PeasantController>(entIt->second.get()));
 				myHeroes.push_back(entIt->second);
 			}
 		}
@@ -339,6 +302,57 @@ void Game::MakeMove(std::ostream& out) const
 		hero->GetController()->MakeMove(out);
 }
 #pragma endregion ..\Codin\Game.cpp
+#pragma region ..\Codin\PeasantController.cpp
+// #include "PeasantController.h"
+
+// #include "Entity.h"
+// #include "Game.h"
+
+#include <algorithm>
+#include <iostream>
+#include <vector>
+
+void PeasantController::Tick(const Game& game)
+{
+	std::vector<Entity*> myEnemies;
+	myEnemies.reserve(game.GetAllEntities().size());
+	std::vector<Entity*> otherEnemies;
+	otherEnemies.reserve(game.GetAllEntities().size());
+
+	for (const auto& ent : game.GetAllEntities())
+	{
+		if (ent.second->GetThreatFor() == ThreatFor::MyBase)
+			myEnemies.push_back(ent.second.get());
+		else if (ent.second->GetType() == EntityType::Monster)
+			otherEnemies.push_back(ent.second.get());
+	}
+
+	auto compareEnemyDist = [&game](Entity* a, Entity* b) { return DistanceSqr(a->GetTargetPosition(), game.GetBasePosition()) < DistanceSqr(b->GetTargetPosition(), game.GetBasePosition()); };
+
+	if (!myEnemies.empty())
+	{
+		std::sort(myEnemies.begin(), myEnemies.end(), compareEnemyDist);
+		targetPosition = myEnemies.front()->GetTargetPosition();
+	}
+	else if (!otherEnemies.empty())
+	{
+		std::sort(otherEnemies.begin(), otherEnemies.end(), compareEnemyDist);
+		targetPosition = otherEnemies.front()->GetTargetPosition();
+	}
+	else
+		targetPosition = owner->GetPosition();
+}
+
+void PeasantController::MakeMove(std::ostream& out) const
+{
+	if (owner->GetPosition() == targetPosition)
+		out << "WAIT";
+	else
+		out << "MOVE " << targetPosition;
+
+	out << " Peasant" << std::endl;
+}
+#pragma endregion ..\Codin\PeasantController.cpp
 #pragma region ..\Codin\StatsDescription.cpp
 // #include "StatsDescription.h"
 #pragma region ..\Codin\StatsDescription.h

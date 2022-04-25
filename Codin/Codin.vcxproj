@@ -147,10 +147,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="EntityDescription.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="PeasantController.cpp" />
     <ClCompile Include="StatsDescription.cpp" />
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
@@ -159,6 +159,7 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityDescription.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="PeasantController.h" />
     <ClInclude Include="Rules.h" />
     <ClInclude Include="StatsDescription.h" />
     <ClInclude Include="Utils.h" />
