@@ -28,6 +28,8 @@ public:
 	const Vector& GetBasePosition() const { return basePosition; }
 
 private:
+	void PossesEntity(Entity* hero);
+
 	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
 	std::vector<std::shared_ptr<Entity>> myHeroes;
 	Vector basePosition{};

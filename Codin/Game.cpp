@@ -1,5 +1,6 @@
 #include "Game.h"
 
+#include "PaladinController.h"
 #include "PeasantController.h"
 #include "Entity.h"
 #include "EntityDescription.h"
@@ -28,7 +29,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
 			if (entIt->second->GetType() == EntityType::MyHero)
 			{
-				entIt->second->SetController(std::make_unique<PeasantController>(entIt->second.get()));
+				PossesEntity(entIt->second.get());
 				myHeroes.push_back(entIt->second);
 			}
 		}
@@ -55,4 +56,15 @@ void Game::MakeMove(std::ostream& out) const
 {
 	for (const auto& hero : myHeroes)
 		hero->GetController()->MakeMove(out);
+}
+
+void Game::PossesEntity(Entity* hero)
+{
+	std::unique_ptr<Controller> controller{};
+	if (myHeroes.empty())
+		controller = std::make_unique<PaladinController>(hero);
+	else
+		controller = std::make_unique<PeasantController>(hero);
+
+	hero->SetController(std::move(controller));
 }

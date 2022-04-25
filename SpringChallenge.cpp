@@ -204,6 +204,8 @@ public:
 	const Vector& GetBasePosition() const { return basePosition; }
 
 private:
+	void PossesEntity(Entity* hero);
+
 	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
 	std::vector<std::shared_ptr<Entity>> myHeroes;
 	Vector basePosition{};
@@ -212,6 +214,22 @@ private:
 };
 #pragma endregion ..\Codin\Game.h
 
+// #include "PaladinController.h"
+#pragma region ..\Codin\PaladinController.h
+// #pragma once
+// #include "Controller.h"
+
+class PaladinController : public Controller
+{
+public:
+	PaladinController(Entity* owner) : Controller(owner) { }
+
+	virtual void Tick(const Game& game) override;
+	virtual void MakeMove(std::ostream& out) const override;
+
+};
+
+#pragma endregion ..\Codin\PaladinController.h
 // #include "PeasantController.h"
 #pragma region ..\Codin\PeasantController.h
 // #pragma once
@@ -273,7 +291,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
 			if (entIt->second->GetType() == EntityType::MyHero)
 			{
-				entIt->second->SetController(std::make_unique<PeasantController>(entIt->second.get()));
+				PossesEntity(entIt->second.get());
 				myHeroes.push_back(entIt->second);
 			}
 		}
@@ -301,7 +319,37 @@ void Game::MakeMove(std::ostream& out) const
 	for (const auto& hero : myHeroes)
 		hero->GetController()->MakeMove(out);
 }
+
+void Game::PossesEntity(Entity* hero)
+{
+	std::unique_ptr<Controller> controller{};
+	if (myHeroes.empty())
+		controller = std::make_unique<PaladinController>(hero);
+	else
+		controller = std::make_unique<PeasantController>(hero);
+
+	hero->SetController(std::move(controller));
+}
 #pragma endregion ..\Codin\Game.cpp
+#pragma region ..\Codin\PaladinController.cpp
+// #include "PaladinController.h"
+
+// #include "Utils.h"
+
+#include <iostream>
+
+void PaladinController::Tick(const Game& game)
+{
+	UNUSED(game);
+}
+
+void PaladinController::MakeMove(std::ostream& out) const
+{
+	out << "WAIT";
+
+	out << " Paladin" << std::endl;
+}
+#pragma endregion ..\Codin\PaladinController.cpp
 #pragma region ..\Codin\PeasantController.cpp
 // #include "PeasantController.h"
 

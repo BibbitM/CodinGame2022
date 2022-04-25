@@ -10,6 +10,7 @@
     <ClInclude Include="Controller.h" />
     <ClInclude Include="Rules.h" />
     <ClInclude Include="PeasantController.h" />
+    <ClInclude Include="PaladinController.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vector.cpp" />
@@ -18,5 +19,6 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="PeasantController.cpp" />
+    <ClCompile Include="PaladinController.cpp" />
   </ItemGroup>
 </Project>
