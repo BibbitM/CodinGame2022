@@ -12,7 +12,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game", "Game\Game.vcxproj",
 		{24D3B814-E04C-49EC-91E7-52FBD8BC5E40} = {24D3B814-E04C-49EC-91E7-52FBD8BC5E40}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Merge", "Merge\Merge.csproj", "{24D3B814-E04C-49EC-91E7-52FBD8BC5E40}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Merge", "Merge\Merge.csproj", "{24D3B814-E04C-49EC-91E7-52FBD8BC5E40}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Generated", "_Generated", "{FC45536E-C4C4-4D68-A111-AC1CC45D8FD1}"
+	ProjectSection(SolutionItems) = preProject
+		SpringChallenge.cpp = SpringChallenge.cpp
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
