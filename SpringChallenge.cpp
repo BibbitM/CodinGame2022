@@ -375,10 +375,10 @@ void Game::MakeMove(std::ostream& out) const
 void Game::PossesEntity(Entity* hero)
 {
 	std::unique_ptr<Controller> controller{};
-	//if (myHeroes.empty())
+	if (myHeroes.empty())
 		controller = std::make_unique<PaladinController>(*hero);
-	//else
-	//	controller = std::make_unique<PeasantController>(*hero);
+	else
+		controller = std::make_unique<PeasantController>(*hero);
 
 	hero->SetController(std::move(controller));
 }
@@ -395,7 +395,9 @@ void Game::PossesEntity(Entity* hero)
 
 void PaladinController::Tick(const Game& game)
 {
-	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
+	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 2;
+	constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
+	constexpr int optDistToBase = (minDistToBase + maxDistToBase) / 2;
 	constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
 	constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
 
@@ -404,7 +406,9 @@ void PaladinController::Tick(const Game& game)
 	// Set minimal distance to the base.
 	const int distToBaseSqr = DistanceSqr(owner.GetPosition(), game.GetBasePosition());
 	if (distToBaseSqr < Sqr(minDistToBase))
-		targetPosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(minDistToBase - Sqrt(distToBaseSqr));
+		targetPosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(optDistToBase - Sqrt(distToBaseSqr));
+	else if (distToBaseSqr > Sqr(maxDistToBase))
+		targetPosition += (game.GetBasePosition() - owner.GetPosition()).Lengthed(Sqrt(distToBaseSqr) - optDistToBase);
 
 	// Set minimal distance to the map edges.
 	if (owner.GetPosition().x < minDistToEdge)
@@ -422,9 +426,9 @@ void PaladinController::Tick(const Game& game)
 		if (hero.get() == &owner)
 			continue;
 
-		const int distaceToHeroSqr = DistanceSqr(owner.GetPosition(), hero->GetPosition());
-		if (distaceToHeroSqr < Sqr(minDistToHero))
-			targetPosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distaceToHeroSqr)) / 2);
+		const int distToHeroSqr = DistanceSqr(owner.GetPosition(), hero->GetPosition());
+		if (distToHeroSqr < Sqr(minDistToHero))
+			targetPosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distToHeroSqr)) / 2);
 	}
 }
 
