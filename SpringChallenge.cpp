@@ -402,6 +402,8 @@ void PaladinController::Tick(const Game& game)
 	constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
 	constexpr int sensDistToEnemy = Rules::heroViewRange * 2 / 3;
 	constexpr int optDistToEnemy = Rules::heroAttackRange * 1 / 2;
+	constexpr int sensDistToThreat = Rules::heroViewRange;
+	constexpr int optDistToThreat = Rules::heroAttackRange * 1 / 2;
 
 	targetPosition = owner.GetPosition();
 
@@ -433,7 +435,21 @@ void PaladinController::Tick(const Game& game)
 			targetPosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distToHeroSqr)) / 2);
 	}
 
-	bool hasAnyEnemy = false;
+	// Try to move to near enemies.
+	for (const auto& ent : game.GetAllEntities())
+	{
+		const auto& enemy = ent.second;
+		if (enemy.get() == &owner)
+			continue;
+		if (enemy->GetType() != EntityType::Monster)
+			continue;
+
+		const int distToEnemySqr = DistanceSqr(enemy->GetPosition(), owner.GetPosition());
+		if (distToEnemySqr < Sqr(sensDistToEnemy) && distToEnemySqr > Sqr(optDistToEnemy))
+			targetPosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToEnemySqr) - optDistToEnemy);
+	}
+
+	bool hasAnyThreat = false;
 
 	// Try to move to near enemies.
 	for (const auto& ent : game.GetAllEntities())
@@ -441,20 +457,18 @@ void PaladinController::Tick(const Game& game)
 		const auto& enemy = ent.second;
 		if (enemy.get() == &owner)
 			continue;
-		//if (enemy->GetThreatFor() != ThreatFor::MyBase)
-		//	continue;
-		if (enemy->GetType() != EntityType::Monster)
+		if (enemy->GetThreatFor() != ThreatFor::MyBase)
 			continue;
 
-		const int distToEnemySqr = DistanceSqr(enemy->GetPosition(), owner.GetPosition());
-		if (distToEnemySqr < Sqr(sensDistToEnemy) && distToEnemySqr > Sqr(optDistToEnemy))
+		const int distToThreatSqr = DistanceSqr(enemy->GetPosition(), owner.GetPosition());
+		if (distToThreatSqr < Sqr(sensDistToThreat) && distToThreatSqr > Sqr(optDistToThreat))
 		{
-			if (!hasAnyEnemy)
+			if (!hasAnyThreat)
 			{
 				targetPosition = owner.GetPosition();
-				hasAnyEnemy = true;
+				hasAnyThreat = true;
 			}
-			targetPosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToEnemySqr) - optDistToEnemy);
+			targetPosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToThreatSqr) - optDistToThreat);
 		}
 	}
 }
