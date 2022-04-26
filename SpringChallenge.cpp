@@ -13,19 +13,35 @@ class Game;
 class Controller
 {
 public:
-	Controller(Entity* owner) : owner(owner) { }
+	Controller(const Entity& owner) : owner(owner) { }
 	virtual ~Controller() { }
 
 	virtual void Tick(const Game& game) = 0;
 	virtual void MakeMove(std::ostream& out) const = 0;
 
 protected:
-	Entity* owner{};
+	const Entity& owner;
 };
 #pragma endregion ..\Codin\Controller.h
 // #include "Vector.h"
 #pragma region ..\Codin\Vector.h
 // #pragma once
+// #include "Math.h"
+#pragma region ..\Codin\Math.h
+// #pragma once
+#include <cmath>
+
+constexpr inline int Sqr(int val)
+{
+	return val * val;
+}
+
+inline int Sqrt(int val)
+{
+	return static_cast<int>(std::lround(std::sqrt(static_cast<float>(val))));
+}
+#pragma endregion ..\Codin\Math.h
+
 #include <iosfwd>
 
 struct Vector
@@ -45,12 +61,10 @@ struct Vector
 
 	Vector operator/(int b) const { return Vector{ x / b, y / b }; }
 	Vector& operator/=(int b) { x /= b; y /= b; return *this; }
-};
 
-inline int Sqr(int val)
-{
-	return val * val;
-}
+	int LengthSqr() const { return Sqr(x) + Sqr(y); }
+	Vector Lengthed(int length) const;
+};
 
 inline int DistanceSqr(const Vector& a, const Vector& b)
 {
@@ -201,6 +215,7 @@ public:
 	void MakeMove(std::ostream& out) const;
 
 	const std::unordered_map<int, std::shared_ptr<Entity>>& GetAllEntities() const { return allEntities; }
+	const std::vector<std::shared_ptr<Entity>>& GetMyHeroes() const { return myHeroes; }
 	const Vector& GetBasePosition() const { return basePosition; }
 
 private:
@@ -221,14 +236,18 @@ private:
 // #pragma once
 // #include "Controller.h"
 
+// #include "Vector.h"
+
 class PaladinController : public Controller
 {
 public:
-	PaladinController(Entity* owner) : Controller(owner) { }
+	PaladinController(const Entity& owner) : Controller(owner) { }
 
 	virtual void Tick(const Game& game) override;
 	virtual void MakeMove(std::ostream& out) const override;
 
+private:
+	Vector targetPosition{};
 };
 
 #pragma endregion ..\Codin\PaladinController.h
@@ -239,12 +258,10 @@ public:
 
 // #include "Vector.h"
 
-#include <iosfwd>
-
 class PeasantController : public Controller
 {
 public:
-	PeasantController(Entity* owner) : Controller(owner) { }
+	PeasantController(const Entity& owner) : Controller(owner) { }
 
 	virtual void Tick(const Game& game) override;
 	virtual void MakeMove(std::ostream& out) const override;
@@ -358,10 +375,10 @@ void Game::MakeMove(std::ostream& out) const
 void Game::PossesEntity(Entity* hero)
 {
 	std::unique_ptr<Controller> controller{};
-	if (myHeroes.empty())
-		controller = std::make_unique<PaladinController>(hero);
-	else
-		controller = std::make_unique<PeasantController>(hero);
+	//if (myHeroes.empty())
+		controller = std::make_unique<PaladinController>(*hero);
+	//else
+	//	controller = std::make_unique<PeasantController>(*hero);
 
 	hero->SetController(std::move(controller));
 }
@@ -369,18 +386,54 @@ void Game::PossesEntity(Entity* hero)
 #pragma region ..\Codin\PaladinController.cpp
 // #include "PaladinController.h"
 
-// #include "Utils.h"
+// #include "Entity.h"
+// #include "Game.h"
+// #include "Math.h"
+// #include "Rules.h"
 
 #include <iostream>
 
 void PaladinController::Tick(const Game& game)
 {
-	UNUSED(game);
+	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
+	constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
+	constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
+
+	targetPosition = owner.GetPosition();
+
+	// Set minimal distance to the base.
+	const int distToBaseSqr = DistanceSqr(owner.GetPosition(), game.GetBasePosition());
+	if (distToBaseSqr < Sqr(minDistToBase))
+		targetPosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(minDistToBase - Sqrt(distToBaseSqr));
+
+	// Set minimal distance to the map edges.
+	if (owner.GetPosition().x < minDistToEdge)
+		targetPosition.x += minDistToEdge - owner.GetPosition().x;
+	if (owner.GetPosition().y < minDistToEdge)
+		targetPosition.y += minDistToEdge - owner.GetPosition().y;
+	if (Rules::mapSize.x - owner.GetPosition().x < minDistToEdge)
+		targetPosition.x -= minDistToEdge - (Rules::mapSize.x - owner.GetPosition().x);
+	if (Rules::mapSize.y - owner.GetPosition().y < minDistToEdge)
+		targetPosition.y -= minDistToEdge - (Rules::mapSize.y - owner.GetPosition().y);
+
+	// Set minimal distance to other players.
+	for (const auto& hero : game.GetMyHeroes())
+	{
+		if (hero.get() == &owner)
+			continue;
+
+		const int distaceToHeroSqr = DistanceSqr(owner.GetPosition(), hero->GetPosition());
+		if (distaceToHeroSqr < Sqr(minDistToHero))
+			targetPosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distaceToHeroSqr)) / 2);
+	}
 }
 
 void PaladinController::MakeMove(std::ostream& out) const
 {
-	out << "WAIT";
+	if (owner.GetPosition() == targetPosition)
+		out << "WAIT";
+	else
+		out << "MOVE " << targetPosition;
 
 	out << " Paladin" << std::endl;
 }
@@ -423,12 +476,12 @@ void PeasantController::Tick(const Game& game)
 		targetPosition = otherEnemies.front()->GetTargetPosition();
 	}
 	else
-		targetPosition = owner->GetPosition();
+		targetPosition = owner.GetPosition();
 }
 
 void PeasantController::MakeMove(std::ostream& out) const
 {
-	if (owner->GetPosition() == targetPosition)
+	if (owner.GetPosition() == targetPosition)
 		out << "WAIT";
 	else
 		out << "MOVE " << targetPosition;
@@ -462,6 +515,18 @@ std::ostream& operator<<(std::ostream& out, const Vector& vec)
 {
 	out << vec.x << ' ' << vec.y;
 	return out;
+}
+
+Vector Vector::Lengthed(int length) const
+{
+	if (!x && !y)
+		return {};
+
+	float flen = std::sqrt(static_cast<float>(LengthSqr()));
+	float fx = static_cast<float>(x) / flen * static_cast<float>(length);
+	float fy = static_cast<float>(y) / flen * static_cast<float>(length);
+
+	return { static_cast<int>(std::lround(fx)), static_cast<int>(std::lround(fy)) };
 }
 #pragma endregion ..\Codin\Vector.cpp
 #pragma region Main.cpp

@@ -35,12 +35,12 @@ void PeasantController::Tick(const Game& game)
 		targetPosition = otherEnemies.front()->GetTargetPosition();
 	}
 	else
-		targetPosition = owner->GetPosition();
+		targetPosition = owner.GetPosition();
 }
 
 void PeasantController::MakeMove(std::ostream& out) const
 {
-	if (owner->GetPosition() == targetPosition)
+	if (owner.GetPosition() == targetPosition)
 		out << "WAIT";
 	else
 		out << "MOVE " << targetPosition;

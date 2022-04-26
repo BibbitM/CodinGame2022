@@ -160,6 +160,7 @@
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityDescription.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="Math.h" />
     <ClInclude Include="PaladinController.h" />
     <ClInclude Include="PeasantController.h" />
     <ClInclude Include="Rules.h" />

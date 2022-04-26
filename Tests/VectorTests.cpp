@@ -111,3 +111,31 @@ TEST(VectorTest, DistanceSqr)
 	EXPECT_EQ(DistanceSqr(Vector({ 0, 1 }), Vector({ 0, 2 })), 1 );
 	EXPECT_EQ(DistanceSqr(Vector({ 3, 4 }), Vector({ 5, 6 })), 8);
 }
+
+TEST(VectorTest, LengthSqr)
+{
+	EXPECT_EQ(Vector({ 0, 0 }).LengthSqr(), 0);
+	EXPECT_EQ(Vector({ 1, 0 }).LengthSqr(), 1);
+	EXPECT_EQ(Vector({ 0, -1 }).LengthSqr(), 1);
+	EXPECT_EQ(Vector({ -3, 0 }).LengthSqr(), 9);
+	EXPECT_EQ(Vector({ 0, 2 }).LengthSqr(), 4);
+	EXPECT_EQ(Vector({ 3, 4 }).LengthSqr(), 25);
+	EXPECT_EQ(Vector({ -10, -10 }).LengthSqr(), 200);
+}
+
+TEST(VectorTest, Lengthed)
+{
+	EXPECT_EQ(Vector({ 1, 0 }).Lengthed(1), Vector({ 1, 0 }));
+	EXPECT_EQ(Vector({ 0, -1 }).Lengthed(1), Vector({ 0, -1 }));
+	EXPECT_EQ(Vector({ 0, 0 }).Lengthed(100), Vector({ 0, 0 }));
+	EXPECT_EQ(Vector({ 0, 1 }).Lengthed(100), Vector({ 0, 100 }));
+	EXPECT_EQ(Vector({ -1, 0 }).Lengthed(100), Vector({ -100, 0 }));
+	EXPECT_EQ(Vector({ 10, -10 }).Lengthed(0), Vector({ 0, 0 }));
+
+	EXPECT_EQ(Vector({ 10, 0 }).Lengthed(10), Vector({ 10, 0 }));
+	EXPECT_EQ(Vector({ 0, -5 }).Lengthed(2), Vector({ 0, -2 }));
+	EXPECT_EQ(Vector({ 3, 4 }).Lengthed(5), Vector({ 3, 4 }));
+	EXPECT_EQ(Vector({ 4, -3 }).Lengthed(10), Vector({ 8, -6 }));
+
+	EXPECT_EQ(Vector({ 1, 1 }).Lengthed(10), Vector({ 7, 7 }));
+}

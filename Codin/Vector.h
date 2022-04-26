@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Math.h"
+
 #include <iosfwd>
 
 struct Vector
@@ -19,12 +21,10 @@ struct Vector
 
 	Vector operator/(int b) const { return Vector{ x / b, y / b }; }
 	Vector& operator/=(int b) { x /= b; y /= b; return *this; }
-};
 
-inline int Sqr(int val)
-{
-	return val * val;
-}
+	int LengthSqr() const { return Sqr(x) + Sqr(y); }
+	Vector Lengthed(int length) const;
+};
 
 inline int DistanceSqr(const Vector& a, const Vector& b)
 {
