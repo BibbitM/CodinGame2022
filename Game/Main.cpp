@@ -30,6 +30,7 @@ int main()
 		for (int i = 0; i < entitiesCount; i++)
 		{
 			std::cin >> entitesDesc.emplace_back(); std::cin.ignore();
+			//std::cerr << entitesDesc.back() << std::endl; //< Uncomment to grab information about game input.
 		}
 
 		game.Tick(myStatsDesc, opponentStatsDesc, entitesDesc);

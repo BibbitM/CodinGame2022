@@ -18,3 +18,4 @@ struct EntityDescription
 };
 
 std::istream& operator>>(std::istream& in, EntityDescription& entDesc);
+std::ostream& operator<<(std::ostream& out, const EntityDescription& entDesc);

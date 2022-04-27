@@ -148,6 +148,7 @@ struct EntityDescription
 };
 
 std::istream& operator>>(std::istream& in, EntityDescription& entDesc);
+std::ostream& operator<<(std::ostream& out, const EntityDescription& entDesc);
 #pragma endregion ..\Codin\EntityDescription.h
 
 Entity::Entity(const EntityDescription& entityDesc, int frame)
@@ -184,6 +185,12 @@ std::istream& operator>>(std::istream& in, EntityDescription& entDesc)
 {
 	in >> entDesc.id >> entDesc.type >> entDesc.pos >> entDesc.shieldLife >> entDesc.isControlled >> entDesc.health >> entDesc.vel >> entDesc.nearBase >> entDesc.threatFor;
 	return in;
+}
+
+std::ostream& operator<<(std::ostream& out, const EntityDescription& entDesc)
+{
+	out << entDesc.id << ' ' << entDesc.type << ' ' << entDesc.pos << ' ' << entDesc.shieldLife << ' ' << entDesc.isControlled << ' ' << entDesc.health << ' ' << entDesc.vel << ' ' << entDesc.nearBase << ' ' << entDesc.threatFor;
+	return out;
 }
 #pragma endregion ..\Codin\EntityDescription.cpp
 #pragma region ..\Codin\Game.cpp
@@ -451,7 +458,7 @@ void PaladinController::Tick(const Game& game)
 
 	bool hasAnyThreat = false;
 
-	// Try to move to near enemies.
+	// Try to move to near threats.
 	for (const auto& ent : game.GetAllEntities())
 	{
 		const auto& enemy = ent.second;
@@ -607,6 +614,7 @@ int main()
 		for (int i = 0; i < entitiesCount; i++)
 		{
 			std::cin >> entitesDesc.emplace_back(); std::cin.ignore();
+			//std::cerr << entitesDesc.back() << std::endl; //< Uncomment to grab information about game input.
 		}
 
 		game.Tick(myStatsDesc, opponentStatsDesc, entitesDesc);
