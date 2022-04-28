@@ -7,9 +7,9 @@
 #include "Simulate.h"
 
 #include <algorithm>
-#include <iostream>
+#include <vector>
 
-void PaladinController::Tick(const Game& game)
+void PaladinController::DoTick(const Game& game)
 {
 	targetPosition = DerermineIdleMove(game);
 
@@ -78,16 +78,6 @@ void PaladinController::Tick(const Game& game)
 		}
 	}
 
-}
-
-void PaladinController::MakeMove(std::ostream& out) const
-{
-	if (owner.GetPosition() == targetPosition)
-		out << "WAIT";
-	else
-		out << "MOVE " << targetPosition;
-
-	out << " Paladin" << std::endl;
 }
 
 Vector PaladinController::DerermineIdleMove(const Game& game) const

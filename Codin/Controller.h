@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Vector.h"
+
 #include <iosfwd>
+#include <string>
 
 class Entity;
 class Game;
@@ -8,12 +11,17 @@ class Game;
 class Controller
 {
 public:
-	Controller(const Entity& owner) : owner(owner) { }
+	Controller(const Entity& owner, std::string_view name) : owner(owner), name(name) { }
 	virtual ~Controller() { }
 
-	virtual void Tick(const Game& game) = 0;
-	virtual void MakeMove(std::ostream& out) const = 0;
+	void Tick(const Game& game);
+	void MakeMove(std::ostream& out) const;
 
 protected:
+	virtual void DoTick(const Game& game) = 0;
+
 	const Entity& owner;
+
+	std::string name{};
+	Vector targetPosition{};
 };

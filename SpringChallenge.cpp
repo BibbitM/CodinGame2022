@@ -1,28 +1,7 @@
-#pragma region ..\Codin\Entity.cpp
-// #include "Entity.h"
-#pragma region ..\Codin\Entity.h
-// #pragma once
+#pragma region ..\Codin\Controller.cpp
 // #include "Controller.h"
 #pragma region ..\Codin\Controller.h
 // #pragma once
-#include <iosfwd>
-
-class Entity;
-class Game;
-
-class Controller
-{
-public:
-	Controller(const Entity& owner) : owner(owner) { }
-	virtual ~Controller() { }
-
-	virtual void Tick(const Game& game) = 0;
-	virtual void MakeMove(std::ostream& out) const = 0;
-
-protected:
-	const Entity& owner;
-};
-#pragma endregion ..\Codin\Controller.h
 // #include "Vector.h"
 #pragma region ..\Codin\Vector.h
 // #pragma once
@@ -74,6 +53,37 @@ inline int DistanceSqr(const Vector& a, const Vector& b)
 std::istream& operator>>(std::istream& in, Vector& vec);
 std::ostream& operator<<(std::ostream& out, const Vector& vec);
 #pragma endregion ..\Codin\Vector.h
+
+#include <iosfwd>
+#include <string>
+
+class Entity;
+class Game;
+
+class Controller
+{
+public:
+	Controller(const Entity& owner, std::string_view name) : owner(owner), name(name) { }
+	virtual ~Controller() { }
+
+	void Tick(const Game& game);
+	void MakeMove(std::ostream& out) const;
+
+protected:
+	virtual void DoTick(const Game& game) = 0;
+
+	const Entity& owner;
+
+	std::string name{};
+	Vector targetPosition{};
+};
+#pragma endregion ..\Codin\Controller.h
+
+// #include "Entity.h"
+#pragma region ..\Codin\Entity.h
+// #pragma once
+// #include "Controller.h"
+// #include "Vector.h"
 
 #include <cstdint>
 #include <memory>
@@ -136,6 +146,29 @@ private:
 	bool isNearBase{};
 };
 #pragma endregion ..\Codin\Entity.h
+
+#include <iostream>
+
+void Controller::Tick(const Game& game)
+{
+	// Clear state.
+	targetPosition = owner.GetPosition();
+
+	DoTick(game);
+}
+
+void Controller::MakeMove(std::ostream& out) const
+{
+	if (owner.GetPosition() == targetPosition)
+		out << "WAIT";
+	else
+		out << "MOVE " << targetPosition;
+
+	out << ' ' << name << std::endl;
+}
+#pragma endregion ..\Codin\Controller.cpp
+#pragma region ..\Codin\Entity.cpp
+// #include "Entity.h"
 
 // #include "EntityDescription.h"
 #pragma region ..\Codin\EntityDescription.h
@@ -267,20 +300,17 @@ private:
 // #pragma once
 // #include "Controller.h"
 
-// #include "Vector.h"
-
 class PaladinController : public Controller
 {
 public:
-	PaladinController(const Entity& owner) : Controller(owner) { }
+	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
 
-	virtual void Tick(const Game& game) override;
-	virtual void MakeMove(std::ostream& out) const override;
+protected:
+	virtual void DoTick(const Game& game) override;
 
 private:
 	Vector DerermineIdleMove(const Game& game) const;
 
-	Vector targetPosition{};
 };
 
 #pragma endregion ..\Codin\PaladinController.h
@@ -289,18 +319,13 @@ private:
 // #pragma once
 // #include "Controller.h"
 
-// #include "Vector.h"
-
 class PeasantController : public Controller
 {
 public:
-	PeasantController(const Entity& owner) : Controller(owner) { }
-
-	virtual void Tick(const Game& game) override;
-	virtual void MakeMove(std::ostream& out) const override;
+	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
 
 protected:
-	Vector targetPosition{};
+	virtual void DoTick(const Game& game) override;
 };
 #pragma endregion ..\Codin\PeasantController.h
 // #include "Entity.h"
@@ -439,9 +464,9 @@ public:
 #pragma endregion ..\Codin\Simulate.h
 
 #include <algorithm>
-#include <iostream>
+#include <vector>
 
-void PaladinController::Tick(const Game& game)
+void PaladinController::DoTick(const Game& game)
 {
 	targetPosition = DerermineIdleMove(game);
 
@@ -510,16 +535,6 @@ void PaladinController::Tick(const Game& game)
 		}
 	}
 
-}
-
-void PaladinController::MakeMove(std::ostream& out) const
-{
-	if (owner.GetPosition() == targetPosition)
-		out << "WAIT";
-	else
-		out << "MOVE " << targetPosition;
-
-	out << " Paladin" << std::endl;
 }
 
 Vector PaladinController::DerermineIdleMove(const Game& game) const
@@ -610,10 +625,9 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 // #include "Game.h"
 
 #include <algorithm>
-#include <iostream>
 #include <vector>
 
-void PeasantController::Tick(const Game& game)
+void PeasantController::DoTick(const Game& game)
 {
 	std::vector<Entity*> myEnemies;
 	myEnemies.reserve(game.GetAllEntities().size());
@@ -642,16 +656,6 @@ void PeasantController::Tick(const Game& game)
 	}
 	else
 		targetPosition = owner.GetPosition();
-}
-
-void PeasantController::MakeMove(std::ostream& out) const
-{
-	if (owner.GetPosition() == targetPosition)
-		out << "WAIT";
-	else
-		out << "MOVE " << targetPosition;
-
-	out << " Peasant" << std::endl;
 }
 #pragma endregion ..\Codin\PeasantController.cpp
 #pragma region ..\Codin\Simulate.cpp

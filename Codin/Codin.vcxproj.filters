@@ -23,5 +23,6 @@
     <ClCompile Include="PeasantController.cpp" />
     <ClCompile Include="PaladinController.cpp" />
     <ClCompile Include="Simulate.cpp" />
+    <ClCompile Include="Controller.cpp" />
   </ItemGroup>
 </Project>

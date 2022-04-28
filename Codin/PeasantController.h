@@ -2,16 +2,11 @@
 
 #include "Controller.h"
 
-#include "Vector.h"
-
 class PeasantController : public Controller
 {
 public:
-	PeasantController(const Entity& owner) : Controller(owner) { }
-
-	virtual void Tick(const Game& game) override;
-	virtual void MakeMove(std::ostream& out) const override;
+	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
 
 protected:
-	Vector targetPosition{};
+	virtual void DoTick(const Game& game) override;
 };

@@ -4,10 +4,9 @@
 #include "Game.h"
 
 #include <algorithm>
-#include <iostream>
 #include <vector>
 
-void PeasantController::Tick(const Game& game)
+void PeasantController::DoTick(const Game& game)
 {
 	std::vector<Entity*> myEnemies;
 	myEnemies.reserve(game.GetAllEntities().size());
@@ -36,14 +35,4 @@ void PeasantController::Tick(const Game& game)
 	}
 	else
 		targetPosition = owner.GetPosition();
-}
-
-void PeasantController::MakeMove(std::ostream& out) const
-{
-	if (owner.GetPosition() == targetPosition)
-		out << "WAIT";
-	else
-		out << "MOVE " << targetPosition;
-
-	out << " Peasant" << std::endl;
 }

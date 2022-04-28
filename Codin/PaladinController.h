@@ -2,19 +2,16 @@
 
 #include "Controller.h"
 
-#include "Vector.h"
-
 class PaladinController : public Controller
 {
 public:
-	PaladinController(const Entity& owner) : Controller(owner) { }
+	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
 
-	virtual void Tick(const Game& game) override;
-	virtual void MakeMove(std::ostream& out) const override;
+protected:
+	virtual void DoTick(const Game& game) override;
 
 private:
 	Vector DerermineIdleMove(const Game& game) const;
 
-	Vector targetPosition{};
 };
 
