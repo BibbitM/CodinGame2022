@@ -11,7 +11,7 @@
 
 void PaladinController::DoTick(const Game& game)
 {
-	SetTarget(-1, DerermineIdleMove(game));
+	SetTarget(-1, DerermineIdleMove(game), "PC-idle");
 
 
 	// TODO: Move to a function
@@ -29,29 +29,17 @@ void PaladinController::DoTick(const Game& game)
 
 	// Find the nearest enemy and move to him.
 	{
-		std::vector<Entity*> dangerousEnemies = enemies;
-		if (!dangerousEnemies.empty())
+		std::vector<Entity*> nearestEnemies = enemies;
+		if (!nearestEnemies.empty())
 		{
 			// Sort to find nearest enemy.
-			std::sort(dangerousEnemies.begin(), dangerousEnemies.end(), [this](Entity* a, Entity* b)
+			std::sort(nearestEnemies.begin(), nearestEnemies.end(), [this](Entity* a, Entity* b)
 			{
 				return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
 			});
 
-			// Move to dangerous enemy if I'll rich him before him destroy my base.
-			for (Entity* danger : dangerousEnemies)
-			{
-				const Vector dangerPosition = danger->GetPosition();
-
-				const int framesToDamageBase = Simulate::FramesToDealDamage(*danger);
-				const int framesToKill = std::max(Sqrt(DistanceSqr(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
-				if (framesToDamageBase > framesToKill + 1)
-					continue;
-				if (framesToDamageBase + 2 < framesToKill)
-					continue;
-				
-				SetTarget(danger->GetId(), dangerPosition);
-			}
+			// Move to nearest enemy.
+			SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
 		}
 	}
 
@@ -61,7 +49,7 @@ void PaladinController::DoTick(const Game& game)
 		std::vector<Entity*> dangerousEnemies = enemies;
 		if (!dangerousEnemies.empty())
 		{
-			// Sort to find nearest enemy.
+			// Sort to find dangerous enemy.
 			std::sort(dangerousEnemies.begin(), dangerousEnemies.end(), [this](Entity* a, Entity* b)
 			{
 				const int aFTDD = Simulate::FramesToDealDamage(*a);
@@ -73,8 +61,29 @@ void PaladinController::DoTick(const Game& game)
 				return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
 			});
 
-			// Move to nearest enemy.
-			SetTarget(dangerousEnemies.front()->GetId(), dangerousEnemies.front()->GetPosition());
+			// Move to dangerous enemy if I'll rich him before him destroy my base.
+			for (Entity* danger : dangerousEnemies)
+			{
+				const Vector dangerPosition = danger->GetPosition();
+
+				const int framesToDamageBase = Simulate::FramesToDealDamage(*danger);
+				const int framesToKill = std::max(Sqrt(DistanceSqr(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
+				if (framesToDamageBase > framesToKill + 2)
+					continue;
+				if (framesToDamageBase + 2 < framesToKill)
+					continue;
+
+				if (framesToDamageBase <= 1 && framesToKill <= 2)
+				{
+					SetTarget(danger->GetId(), dangerPosition, "PC-danger-near-base");
+					break;
+				}
+
+				if (IsTargetedEntity(danger->GetId(), game))
+					continue;
+
+				SetTarget(danger->GetId(), dangerPosition, "PC-danger");
+			}
 		}
 	}
 

@@ -50,6 +50,10 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			++it;
 	}
 
+	// Prepare all heroes for new tick.
+	for (const auto& hero : myHeroes)
+		hero->GetController()->Clear();
+
 	// Tick all heroes.
 	for (const auto& hero : myHeroes)
 		hero->GetController()->Tick(*this);

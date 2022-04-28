@@ -1,15 +1,18 @@
 #include "Controller.h"
 
 #include "Entity.h"
+#include "Game.h"
 
 #include <iostream>
 
-void Controller::Tick(const Game& game)
+void Controller::Clear()
 {
-	// Clear state.
 	targetPosition = owner.GetPosition();
 	targetEntity = -1;
+}
 
+void Controller::Tick(const Game& game)
+{
 	DoTick(game);
 }
 
@@ -23,8 +26,20 @@ void Controller::MakeMove(std::ostream& out) const
 	out << ' ' << name << std::endl;
 }
 
-void Controller::SetTarget(int entity, const Vector& pos)
+void Controller::SetTarget(int entity, const Vector& pos, std::string_view info)
 {
 	targetEntity = entity;
 	targetPosition = pos;
+
+	std::cerr << "H:" << owner.GetId() << " T:" << entity << ' ' << info << std::endl;
+}
+
+bool Controller::IsTargetedEntity(int entity, const Game& game)
+{
+	for (auto hero : game.GetMyHeroes())
+	{
+		if (hero->GetController()->targetEntity == entity)
+			return true;
+	}
+	return false;
 }

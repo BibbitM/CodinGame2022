@@ -26,11 +26,11 @@ void PeasantController::DoTick(const Game& game)
 	if (!myEnemies.empty())
 	{
 		std::sort(myEnemies.begin(), myEnemies.end(), compareEnemyDist);
-		SetTarget(myEnemies.front()->GetId(), myEnemies.front()->GetTargetPosition());
+		SetTarget(myEnemies.front()->GetId(), myEnemies.front()->GetTargetPosition(), "PE-myEnemy");
 	}
 	else if (!otherEnemies.empty())
 	{
 		std::sort(otherEnemies.begin(), otherEnemies.end(), compareEnemyDist);
-		SetTarget(otherEnemies.front()->GetId(), otherEnemies.front()->GetTargetPosition());
+		SetTarget(otherEnemies.front()->GetId(), otherEnemies.front()->GetTargetPosition(), "PE-otherEnemy");
 	}
 }
