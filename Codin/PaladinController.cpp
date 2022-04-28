@@ -4,6 +4,7 @@
 #include "Game.h"
 #include "Math.h"
 #include "Rules.h"
+#include "Simulate.h"
 
 #include <algorithm>
 #include <iostream>
@@ -12,29 +13,71 @@ void PaladinController::Tick(const Game& game)
 {
 	targetPosition = DerermineIdleMove(game);
 
+
 	// TODO: Move to a function
-	std::vector<Entity*> nearestEnemies;
-	nearestEnemies.reserve(game.GetAllEntities().size());
+	std::vector<Entity*> enemies;
+	enemies.reserve(game.GetAllEntities().size());
 
 	// Get only enemies.
 	for (const auto& ent : game.GetAllEntities())
 	{
 		const auto& enemy = ent.second;
 		if (enemy->GetThreatFor() == ThreatFor::MyBase)
-			nearestEnemies.push_back(enemy.get());
+			enemies.push_back(enemy.get());
 	}
 
-	if (!nearestEnemies.empty())
+
+	// Find the nearest enemy and move to him.
 	{
-		// Sort to find nearest enemy.
-		std::sort(nearestEnemies.begin(), nearestEnemies.end(), [this](Entity* a, Entity* b)
+		std::vector<Entity*> dangerousEnemies = enemies;
+		if (!dangerousEnemies.empty())
 		{
-			return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
-		});
+			// Sort to find nearest enemy.
+			std::sort(dangerousEnemies.begin(), dangerousEnemies.end(), [this](Entity* a, Entity* b)
+			{
+				return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
+			});
 
-		// Move to nearest enemy.
-		targetPosition = nearestEnemies.front()->GetPosition();
+			// Move to dangerous enemy if I'll rich him before him destroy my base.
+			for (Entity* danger : dangerousEnemies)
+			{
+				const Vector dangerPosition = danger->GetPosition();
+
+				const int framesToDamageBase = Simulate::FramesToDealDamage(*danger);
+				const int framesToKill = std::max(Sqrt(DistanceSqr(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
+				if (framesToDamageBase > framesToKill + 1)
+					continue;
+				if (framesToDamageBase + 2 < framesToKill)
+					continue;
+				
+				targetPosition = dangerPosition;
+			}
+		}
 	}
+
+
+	// Find enemy that will destroy base in 1 move and move to him.
+	{
+		std::vector<Entity*> dangerousEnemies = enemies;
+		if (!dangerousEnemies.empty())
+		{
+			// Sort to find nearest enemy.
+			std::sort(dangerousEnemies.begin(), dangerousEnemies.end(), [this](Entity* a, Entity* b)
+			{
+				const int aFTDD = Simulate::FramesToDealDamage(*a);
+				const int bFTDD = Simulate::FramesToDealDamage(*b);
+				if (aFTDD < bFTDD)
+					return true;
+				if (aFTDD > bFTDD)
+					return false;
+				return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
+			});
+
+			// Move to nearest enemy.
+			targetPosition = dangerousEnemies.front()->GetPosition();
+		}
+	}
+
 }
 
 void PaladinController::MakeMove(std::ostream& out) const
