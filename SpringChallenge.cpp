@@ -116,6 +116,10 @@ public:
 
 	int GetLastFrame() const { return lastFrame; }
 
+	void SetPosition(const Vector& pos) { position = pos; }
+	void SetVelocity(const Vector& vel) { velocity = vel; }
+	void SetNearBase(bool isNear) { isNearBase = isNear; }
+
 private:
 	std::unique_ptr<Controller> controllingBrain{};
 
@@ -546,6 +550,34 @@ void PeasantController::MakeMove(std::ostream& out) const
 	out << " Peasant" << std::endl;
 }
 #pragma endregion ..\Codin\PeasantController.cpp
+#pragma region ..\Codin\Simulate.cpp
+// #include "Simulate.h"
+#pragma region ..\Codin\Simulate.h
+// #pragma once
+class Entity;
+
+class Simulate
+{
+public:
+	static void Update(Entity& entity);
+};
+#pragma endregion ..\Codin\Simulate.h
+
+// #include "Entity.h"
+// #include "Rules.h"
+
+void Simulate::Update(Entity& entity)
+{
+	entity.SetPosition(entity.GetTargetPosition());
+
+	const Vector basePosition = entity.GetPosition().x < Rules::mapSize.x / 2 ? Vector{ 0, 0 } : Rules::mapSize;
+	if (DistanceSqr(entity.GetPosition(), basePosition) <= Sqr(Rules::monsterBaseAttackRange))
+	{
+		entity.SetNearBase(true);
+		entity.SetVelocity((basePosition - entity.GetPosition()).Lengthed(Rules::monsterMoveRange));
+	}
+}
+#pragma endregion ..\Codin\Simulate.cpp
 #pragma region ..\Codin\StatsDescription.cpp
 // #include "StatsDescription.h"
 
@@ -583,7 +615,7 @@ Vector Vector::Lengthed(int length) const
 	float fx = static_cast<float>(x) / flen * static_cast<float>(length);
 	float fy = static_cast<float>(y) / flen * static_cast<float>(length);
 
-	return { static_cast<int>(std::lround(fx)), static_cast<int>(std::lround(fy)) };
+	return { static_cast<int>(fx), static_cast<int>(fy) };
 }
 #pragma endregion ..\Codin\Vector.cpp
 #pragma region Main.cpp

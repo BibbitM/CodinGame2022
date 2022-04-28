@@ -152,6 +152,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="PaladinController.cpp" />
     <ClCompile Include="PeasantController.cpp" />
+    <ClCompile Include="Simulate.cpp" />
     <ClCompile Include="StatsDescription.cpp" />
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
@@ -164,6 +165,7 @@
     <ClInclude Include="PaladinController.h" />
     <ClInclude Include="PeasantController.h" />
     <ClInclude Include="Rules.h" />
+    <ClInclude Include="Simulate.h" />
     <ClInclude Include="StatsDescription.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Vector.h" />

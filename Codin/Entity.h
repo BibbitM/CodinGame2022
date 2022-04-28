@@ -44,6 +44,10 @@ public:
 
 	int GetLastFrame() const { return lastFrame; }
 
+	void SetPosition(const Vector& pos) { position = pos; }
+	void SetVelocity(const Vector& vel) { velocity = vel; }
+	void SetNearBase(bool isNear) { isNearBase = isNear; }
+
 private:
 	std::unique_ptr<Controller> controllingBrain{};
 

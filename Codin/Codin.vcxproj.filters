@@ -12,6 +12,7 @@
     <ClInclude Include="PeasantController.h" />
     <ClInclude Include="PaladinController.h" />
     <ClInclude Include="Math.h" />
+    <ClInclude Include="Simulate.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vector.cpp" />
@@ -21,5 +22,6 @@
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="PeasantController.cpp" />
     <ClCompile Include="PaladinController.cpp" />
+    <ClCompile Include="Simulate.cpp" />
   </ItemGroup>
 </Project>
