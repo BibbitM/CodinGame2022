@@ -19,9 +19,12 @@ public:
 
 protected:
 	virtual void DoTick(const Game& game) = 0;
+	void SetTarget(int targetEntity, const Vector& targetPosition);
 
 	const Entity& owner;
 
+private:
 	std::string name{};
 	Vector targetPosition{};
+	int targetEntity{ -1 };
 };

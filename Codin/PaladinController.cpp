@@ -11,7 +11,7 @@
 
 void PaladinController::DoTick(const Game& game)
 {
-	targetPosition = DerermineIdleMove(game);
+	SetTarget(-1, DerermineIdleMove(game));
 
 
 	// TODO: Move to a function
@@ -50,7 +50,7 @@ void PaladinController::DoTick(const Game& game)
 				if (framesToDamageBase + 2 < framesToKill)
 					continue;
 				
-				targetPosition = dangerPosition;
+				SetTarget(danger->GetId(), dangerPosition);
 			}
 		}
 	}
@@ -74,7 +74,7 @@ void PaladinController::DoTick(const Game& game)
 			});
 
 			// Move to nearest enemy.
-			targetPosition = dangerousEnemies.front()->GetPosition();
+			SetTarget(dangerousEnemies.front()->GetId(), dangerousEnemies.front()->GetPosition());
 		}
 	}
 

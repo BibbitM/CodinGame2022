@@ -71,11 +71,14 @@ public:
 
 protected:
 	virtual void DoTick(const Game& game) = 0;
+	void SetTarget(int targetEntity, const Vector& targetPosition);
 
 	const Entity& owner;
 
+private:
 	std::string name{};
 	Vector targetPosition{};
+	int targetEntity{ -1 };
 };
 #pragma endregion ..\Codin\Controller.h
 
@@ -153,6 +156,7 @@ void Controller::Tick(const Game& game)
 {
 	// Clear state.
 	targetPosition = owner.GetPosition();
+	targetEntity = -1;
 
 	DoTick(game);
 }
@@ -165,6 +169,12 @@ void Controller::MakeMove(std::ostream& out) const
 		out << "MOVE " << targetPosition;
 
 	out << ' ' << name << std::endl;
+}
+
+void Controller::SetTarget(int entity, const Vector& pos)
+{
+	targetEntity = entity;
+	targetPosition = pos;
 }
 #pragma endregion ..\Codin\Controller.cpp
 #pragma region ..\Codin\Entity.cpp
@@ -468,7 +478,7 @@ public:
 
 void PaladinController::DoTick(const Game& game)
 {
-	targetPosition = DerermineIdleMove(game);
+	SetTarget(-1, DerermineIdleMove(game));
 
 
 	// TODO: Move to a function
@@ -507,7 +517,7 @@ void PaladinController::DoTick(const Game& game)
 				if (framesToDamageBase + 2 < framesToKill)
 					continue;
 				
-				targetPosition = dangerPosition;
+				SetTarget(danger->GetId(), dangerPosition);
 			}
 		}
 	}
@@ -531,7 +541,7 @@ void PaladinController::DoTick(const Game& game)
 			});
 
 			// Move to nearest enemy.
-			targetPosition = dangerousEnemies.front()->GetPosition();
+			SetTarget(dangerousEnemies.front()->GetId(), dangerousEnemies.front()->GetPosition());
 		}
 	}
 
@@ -647,15 +657,13 @@ void PeasantController::DoTick(const Game& game)
 	if (!myEnemies.empty())
 	{
 		std::sort(myEnemies.begin(), myEnemies.end(), compareEnemyDist);
-		targetPosition = myEnemies.front()->GetTargetPosition();
+		SetTarget(myEnemies.front()->GetId(), myEnemies.front()->GetTargetPosition());
 	}
 	else if (!otherEnemies.empty())
 	{
 		std::sort(otherEnemies.begin(), otherEnemies.end(), compareEnemyDist);
-		targetPosition = otherEnemies.front()->GetTargetPosition();
+		SetTarget(otherEnemies.front()->GetId(), otherEnemies.front()->GetTargetPosition());
 	}
-	else
-		targetPosition = owner.GetPosition();
 }
 #pragma endregion ..\Codin\PeasantController.cpp
 #pragma region ..\Codin\Simulate.cpp

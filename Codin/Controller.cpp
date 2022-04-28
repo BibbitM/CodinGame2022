@@ -8,6 +8,7 @@ void Controller::Tick(const Game& game)
 {
 	// Clear state.
 	targetPosition = owner.GetPosition();
+	targetEntity = -1;
 
 	DoTick(game);
 }
@@ -20,4 +21,10 @@ void Controller::MakeMove(std::ostream& out) const
 		out << "MOVE " << targetPosition;
 
 	out << ' ' << name << std::endl;
+}
+
+void Controller::SetTarget(int entity, const Vector& pos)
+{
+	targetEntity = entity;
+	targetPosition = pos;
 }
