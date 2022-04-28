@@ -22,7 +22,7 @@ struct Vector
 	Vector operator/(int b) const { return Vector{ x / b, y / b }; }
 	Vector& operator/=(int b) { x /= b; y /= b; return *this; }
 
-	int LengthSqr() const { return Sqr(x) + Sqr(y); }
+	constexpr int LengthSqr() const { return Sqr(x) + Sqr(y); }
 	Vector Lengthed(int length) const;
 };
 

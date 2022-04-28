@@ -7,6 +7,20 @@ Entity::Entity(const EntityDescription& entityDesc, int frame)
 	Actualize(entityDesc, frame);
 }
 
+Entity::Entity(const Entity& entity)
+	: controllingBrain{} //< Copy resets brain.
+	, position{ entity.position }
+	, velocity{ entity.velocity }
+	, id{ entity.id }
+	, shieldLife{ entity.shieldLife }
+	, health{ entity.health }
+	, lastFrame{ entity.lastFrame }
+	, type{ entity.type }
+	, threatFor{ entity.threatFor }
+	, isControlled{ entity.isControlled }
+	, isNearBase{ entity.isNearBase }
+{}
+
 void Entity::Actualize(const EntityDescription& entityDesc, int frame)
 {
 	position = entityDesc.pos;

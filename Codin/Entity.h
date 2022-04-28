@@ -26,6 +26,7 @@ class Entity
 {
 public:
 	Entity(const EntityDescription& entityDesc, int frame);
+	Entity(const Entity& entity);
 	void Actualize(const EntityDescription& entityDesc, int frame);
 
 	void SetController(std::unique_ptr<Controller> controller);
