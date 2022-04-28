@@ -278,6 +278,8 @@ public:
 	virtual void MakeMove(std::ostream& out) const override;
 
 private:
+	Vector DerermineIdleMove(const Game& game) const;
+
 	Vector targetPosition{};
 };
 
@@ -422,9 +424,49 @@ void Game::PossesEntity(Entity* hero)
 // #include "Math.h"
 // #include "Rules.h"
 
+#include <algorithm>
 #include <iostream>
 
 void PaladinController::Tick(const Game& game)
+{
+	targetPosition = DerermineIdleMove(game);
+
+	// TODO: Move to a function
+	std::vector<Entity*> nearestEnemies;
+	nearestEnemies.reserve(game.GetAllEntities().size());
+
+	// Get only enemies.
+	for (const auto& ent : game.GetAllEntities())
+	{
+		const auto& enemy = ent.second;
+		if (enemy->GetThreatFor() == ThreatFor::MyBase)
+			nearestEnemies.push_back(enemy.get());
+	}
+
+	if (!nearestEnemies.empty())
+	{
+		// Sort to find nearest enemy.
+		std::sort(nearestEnemies.begin(), nearestEnemies.end(), [this](Entity* a, Entity* b)
+		{
+			return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
+		});
+
+		// Move to nearest enemy.
+		targetPosition = nearestEnemies.front()->GetPosition();
+	}
+}
+
+void PaladinController::MakeMove(std::ostream& out) const
+{
+	if (owner.GetPosition() == targetPosition)
+		out << "WAIT";
+	else
+		out << "MOVE " << targetPosition;
+
+	out << " Paladin" << std::endl;
+}
+
+Vector PaladinController::DerermineIdleMove(const Game& game) const
 {
 	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 2;
 	constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
@@ -436,24 +478,24 @@ void PaladinController::Tick(const Game& game)
 	constexpr int sensDistToThreat = Rules::heroViewRange;
 	constexpr int optDistToThreat = Rules::heroAttackRange * 1 / 2;
 
-	targetPosition = owner.GetPosition();
+	Vector idlePosition = owner.GetPosition();
 
 	// Set minimal distance to the base.
 	const int distToBaseSqr = DistanceSqr(owner.GetPosition(), game.GetBasePosition());
 	if (distToBaseSqr < Sqr(minDistToBase))
-		targetPosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(optDistToBase - Sqrt(distToBaseSqr));
+		idlePosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(optDistToBase - Sqrt(distToBaseSqr));
 	else if (distToBaseSqr > Sqr(maxDistToBase))
-		targetPosition += (game.GetBasePosition() - owner.GetPosition()).Lengthed(Sqrt(distToBaseSqr) - optDistToBase);
+		idlePosition += (game.GetBasePosition() - owner.GetPosition()).Lengthed(Sqrt(distToBaseSqr) - optDistToBase);
 
 	// Set minimal distance to the map edges.
 	if (owner.GetPosition().x < minDistToEdge)
-		targetPosition.x += minDistToEdge - owner.GetPosition().x;
+		idlePosition.x += minDistToEdge - owner.GetPosition().x;
 	if (owner.GetPosition().y < minDistToEdge)
-		targetPosition.y += minDistToEdge - owner.GetPosition().y;
+		idlePosition.y += minDistToEdge - owner.GetPosition().y;
 	if (Rules::mapSize.x - owner.GetPosition().x < minDistToEdge)
-		targetPosition.x -= minDistToEdge - (Rules::mapSize.x - owner.GetPosition().x);
+		idlePosition.x -= minDistToEdge - (Rules::mapSize.x - owner.GetPosition().x);
 	if (Rules::mapSize.y - owner.GetPosition().y < minDistToEdge)
-		targetPosition.y -= minDistToEdge - (Rules::mapSize.y - owner.GetPosition().y);
+		idlePosition.y -= minDistToEdge - (Rules::mapSize.y - owner.GetPosition().y);
 
 	// Set minimal distance to other players.
 	for (const auto& hero : game.GetMyHeroes())
@@ -463,7 +505,7 @@ void PaladinController::Tick(const Game& game)
 
 		const int distToHeroSqr = DistanceSqr(owner.GetPosition(), hero->GetPosition());
 		if (distToHeroSqr < Sqr(minDistToHero))
-			targetPosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distToHeroSqr)) / 2);
+			idlePosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distToHeroSqr)) / 2);
 	}
 
 	// Try to move to near enemies.
@@ -477,7 +519,7 @@ void PaladinController::Tick(const Game& game)
 
 		const int distToEnemySqr = DistanceSqr(enemy->GetPosition(), owner.GetPosition());
 		if (distToEnemySqr < Sqr(sensDistToEnemy) && distToEnemySqr > Sqr(optDistToEnemy))
-			targetPosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToEnemySqr) - optDistToEnemy);
+			idlePosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToEnemySqr) - optDistToEnemy);
 	}
 
 	bool hasAnyThreat = false;
@@ -496,22 +538,13 @@ void PaladinController::Tick(const Game& game)
 		{
 			if (!hasAnyThreat)
 			{
-				targetPosition = owner.GetPosition();
+				idlePosition = owner.GetPosition();
 				hasAnyThreat = true;
 			}
-			targetPosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToThreatSqr) - optDistToThreat);
+			idlePosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToThreatSqr) - optDistToThreat);
 		}
 	}
-}
-
-void PaladinController::MakeMove(std::ostream& out) const
-{
-	if (owner.GetPosition() == targetPosition)
-		out << "WAIT";
-	else
-		out << "MOVE " << targetPosition;
-
-	out << " Paladin" << std::endl;
+	return idlePosition;
 }
 #pragma endregion ..\Codin\PaladinController.cpp
 #pragma region ..\Codin\PeasantController.cpp

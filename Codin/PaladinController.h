@@ -13,6 +13,8 @@ public:
 	virtual void MakeMove(std::ostream& out) const override;
 
 private:
+	Vector DerermineIdleMove(const Game& game) const;
+
 	Vector targetPosition{};
 };
 
