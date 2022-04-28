@@ -15,9 +15,9 @@ void Entity::Actualize(const EntityDescription& entityDesc, int frame)
 	shieldLife = entityDesc.shieldLife;
 	health = entityDesc.health;
 	type = static_cast<EntityType>(entityDesc.type);
-	threatFor = static_cast<ThreatFor>(entityDesc.threatFor);
+	threatFor = entityDesc.threatFor >= 0 ? static_cast<ThreatFor>(entityDesc.threatFor) : ThreatFor::None;
 	isControlled = entityDesc.isControlled != 0;
-	isNearBase = entityDesc.nearBase != 0;
+	isNearBase = entityDesc.nearBase == 1;
 
 	lastFrame = frame;
 }

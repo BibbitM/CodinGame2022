@@ -80,14 +80,14 @@ std::ostream& operator<<(std::ostream& out, const Vector& vec);
 
 struct EntityDescription;
 
-enum class EntityType : uint8_t
+enum class EntityType : int8_t
 {
 	Monster,
 	MyHero,
 	OpponentsHero,
 };
 
-enum class ThreatFor : uint8_t
+enum class ThreatFor : int8_t
 {
 	None,
 	MyBase,
@@ -103,12 +103,17 @@ public:
 	void SetController(std::unique_ptr<Controller> controller);
 	Controller* GetController() { return controllingBrain.get(); }
 
+	int GetId() const { return id; }
 	const Vector& GetPosition() const { return position; }
 	const Vector& GetVelocity() const { return velocity; }
 	Vector GetTargetPosition() const { return position + velocity; }
-
 	EntityType GetType() const { return type; }
 	ThreatFor GetThreatFor() const { return threatFor; }
+	int GetShieldLife() const { return shieldLife; }
+	int GetHealt() const { return health; }
+	bool IsControlled() const { return isControlled; }
+	bool IsNearBase() const { return isNearBase; }
+
 	int GetLastFrame() const { return lastFrame; }
 
 private:
@@ -164,9 +169,9 @@ void Entity::Actualize(const EntityDescription& entityDesc, int frame)
 	shieldLife = entityDesc.shieldLife;
 	health = entityDesc.health;
 	type = static_cast<EntityType>(entityDesc.type);
-	threatFor = static_cast<ThreatFor>(entityDesc.threatFor);
+	threatFor = entityDesc.threatFor >= 0 ? static_cast<ThreatFor>(entityDesc.threatFor) : ThreatFor::None;
 	isControlled = entityDesc.isControlled != 0;
-	isNearBase = entityDesc.nearBase != 0;
+	isNearBase = entityDesc.nearBase == 1;
 
 	lastFrame = frame;
 }
