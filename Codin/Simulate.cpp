@@ -27,11 +27,11 @@ int Simulate::FramesToDealDamage(const Entity& entity)
 
 	const Vector basePosition = GetNearestBasePosition(entity);
 
-	constexpr int maxFramesToDealDamage = static_cast<int>(static_cast<float>(Rules::mapSize.LengthSqr()) / static_cast<float>(Rules::monsterMoveRange));
+	constexpr int maxFramesToDealDamageSqr = static_cast<int>(static_cast<float>(Rules::mapSize.LengthSqr()) / static_cast<float>(Sqr(Rules::monsterMoveRange)));
 	int framesToDealDamge = 0;
 	Entity simulatedEntity{ entity };
 	while (DistanceSqr(simulatedEntity.GetTargetPosition(), basePosition) > Sqr(Rules::monsterBaseDestroyRange)
-		&& framesToDealDamge < maxFramesToDealDamage)
+		&& Sqr(framesToDealDamge) < maxFramesToDealDamageSqr)
 	{
 		Update(simulatedEntity);
 		++framesToDealDamge;
