@@ -168,6 +168,7 @@
     <ClInclude Include="Rules.h" />
     <ClInclude Include="Simulate.h" />
     <ClInclude Include="StatsDescription.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Vector.h" />
   </ItemGroup>
