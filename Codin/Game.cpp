@@ -67,7 +67,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 
 		for (auto it = heroes.begin(); it != heroes.end(); ++it)
 		{
-			if ((*it)->GetController()->Attack(*danger))
+			if ((*it)->GetController()->Attack(*this, *danger))
 			{
 				heroes.erase(it);
 				break;
@@ -84,6 +84,11 @@ void Game::MakeMove(std::ostream& out) const
 {
 	for (const auto& hero : myHeroes)
 		hero->GetController()->MakeMove(out);
+}
+
+Vector Game::GetEnemyBasePosition() const
+{
+	return basePosition == Vector{} ? Rules::mapSize : Vector{};
 }
 
 void Game::PossesEntity(Entity* hero)

@@ -20,6 +20,8 @@ public:
 	{ }
 	Game(const Game&) = delete;
 
+	int GetMana() const { return mana; }
+
 	void Tick(const StatsDescription& myStats, const StatsDescription& opponentsStats, const std::vector<EntityDescription>& entitiesDesc);
 
 	void MakeMove(std::ostream& out) const;
@@ -27,6 +29,7 @@ public:
 	const std::unordered_map<int, std::shared_ptr<Entity>>& GetAllEntities() const { return allEntities; }
 	const std::vector<std::shared_ptr<Entity>>& GetMyHeroes() const { return myHeroes; }
 	const Vector& GetBasePosition() const { return basePosition; }
+	Vector GetEnemyBasePosition() const;
 
 private:
 	void PossesEntity(Entity* hero);

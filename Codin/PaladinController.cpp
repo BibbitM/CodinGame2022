@@ -13,10 +13,11 @@
 
 #define LOG_PALADIN_CONTROLLER 1
 
-bool PaladinController::Attack(const Entity& danger)
+bool PaladinController::Attack(const Game& game, const Entity& danger)
 {
 	const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(danger);
 	const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(owner, danger);
+	const int heroFrameToCastWind = Simulate::HeroFramesToCastSpell(owner, danger, Rules::spellWindRange);
 	const int heroFrameToKill = Simulate::FramesToKill(danger.GetHealt());
 
 	constexpr int framesCanIgnore = 5;
@@ -30,10 +31,27 @@ bool PaladinController::Attack(const Entity& danger)
 	if (dangerFrameToAttackBase > heroFrameToAttackDanger + heroFrameToKill + framesCanIgnore)
 		return false;
 
-	// I've to attack.
 #if LOG_PALADIN_CONTROLLER
-	std::cerr << "FB:" << dangerFrameToAttackBase << " FA:" << heroFrameToAttackDanger << " FK:" << heroFrameToKill << std::endl;
+	std::cerr
+		<< " FB:" << dangerFrameToAttackBase
+		<< " FA:" << heroFrameToAttackDanger
+		<< " FK:" << heroFrameToKill
+		<< " FC:" << heroFrameToCastWind
+		<< " Mana:" << game.GetMana()
+		<< std::endl;
 #endif
+
+	// Check if I have to cast spell
+	if (dangerFrameToAttackBase < 2
+		&& heroFrameToCastWind == 0
+		&& dangerFrameToAttackBase < heroFrameToAttackDanger + heroFrameToKill
+		&& game.GetMana() > Rules::spellManaCost)
+	{
+		SetSpell(Spell::Wind, danger.GetId(), game.GetEnemyBasePosition(), "PC-attackWind");
+		return true;
+	}
+
+	// I've to attack.
 	SetTarget(danger.GetId(), Simulate::PositionAfterFrames(danger, heroFrameToAttackDanger), "PC-attack");
 	return true;
 }

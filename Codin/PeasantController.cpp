@@ -2,12 +2,14 @@
 
 #include "Entity.h"
 #include "Game.h"
+#include "Utils.h"
 
 #include <algorithm>
 #include <vector>
 
-bool PeasantController::Attack(const Entity& danger)
+bool PeasantController::Attack(const Game& game, const Entity& danger)
 {
+	UNUSED(game);
 	SetTarget(danger.GetId(), danger.GetTargetPosition(), "PE-attackDanger");
 	return true;
 }
