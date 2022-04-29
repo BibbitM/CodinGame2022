@@ -20,22 +20,69 @@ void Simulate::Update(Entity& entity)
 	}
 }
 
-int Simulate::EnemyFramesToDealDamage(const Entity& entity)
+Vector Simulate::PositionAfterFrames(const Entity& entity, int frames)
 {
-	if (entity.GetThreatFor() == ThreatFor::None)
+	if (frames == 0)
+		return entity.GetPosition();
+
+	Entity simulatedEnemy{ entity };
+	for (int i = 0; i < frames; ++i)
+		Update(simulatedEnemy);
+
+	return simulatedEnemy.GetPosition();
+}
+
+int Simulate::EnemyFramesToAttackBase(const Entity& enemy)
+{
+	if (enemy.GetThreatFor() == ThreatFor::None)
 		return std::numeric_limits<int>::max();
 
-	const Vector basePosition = GetNearestBasePosition(entity);
+	const Vector basePosition = GetNearestBasePosition(enemy);
 
-	constexpr int maxFramesToDealDamage2 = static_cast<int>(static_cast<float>(Rules::mapSize.Length2()) / static_cast<float>(Pow2(Rules::monsterMoveRange)));
+	constexpr int maxFrames2 = static_cast<int>(static_cast<float>(Rules::mapSize.Length2()) / static_cast<float>(Pow2(Rules::monsterMoveRange)));
 	int framesToDealDamge = 0;
-	Entity simulatedEntity{ entity };
-	while (Distance2(simulatedEntity.GetTargetPosition(), basePosition) > Pow2(Rules::monsterBaseDestroyRange)
-		&& Pow2(framesToDealDamge) < maxFramesToDealDamage2)
+	Entity simulatedEnemy{ enemy };
+	while (Distance2(simulatedEnemy.GetTargetPosition(), basePosition) > Pow2(Rules::monsterBaseDestroyRange)
+		&& Pow2(framesToDealDamge) < maxFrames2)
 	{
-		Update(simulatedEntity);
+		Update(simulatedEnemy);
 		++framesToDealDamge;
 	}
 
 	return framesToDealDamge;
+}
+
+int Simulate::HeroFramesToAttackEnemy(const Entity& hero, const Entity& enemy)
+{
+	constexpr int maxFrames2 = static_cast<int>(static_cast<float>(Rules::mapSize.Length2()) / static_cast<float>(Pow2(Rules::monsterMoveRange)));
+	int framesToAttack = 0;
+	Entity simulatedEnemy{ enemy };
+	while (Distance2(hero.GetPosition(), enemy.GetPosition()) >= Pow2(Rules::heroMoveRange * (framesToAttack + 1) + Rules::heroAttackRange)
+		&& Pow2(framesToAttack) < maxFrames2)
+	{
+		Update(simulatedEnemy);
+		++framesToAttack;
+	}
+
+	return framesToAttack;
+}
+
+int Simulate::HeroFramesToCastSpell(const Entity& hero, const Entity& enemy, int spellRange)
+{
+	constexpr int maxFrames2 = static_cast<int>(static_cast<float>(Rules::mapSize.Length2()) / static_cast<float>(Pow2(Rules::monsterMoveRange)));
+	int framesToSpell = 0;
+	Entity simulatedEnemy{ enemy };
+	while (Distance2(hero.GetPosition(), enemy.GetPosition()) >= Pow2(Rules::heroMoveRange * framesToSpell + spellRange)
+		&& Pow2(framesToSpell) < maxFrames2)
+	{
+		Update(simulatedEnemy);
+		++framesToSpell;
+	}
+
+	return framesToSpell;
+}
+
+int Simulate::FramesToKill(int healt)
+{
+	return healt / Rules::heroDamage;
 }
