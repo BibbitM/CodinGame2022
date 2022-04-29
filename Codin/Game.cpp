@@ -68,9 +68,9 @@ void Game::MakeMove(std::ostream& out) const
 void Game::PossesEntity(Entity* hero)
 {
 	std::unique_ptr<Controller> controller{};
-	//if (myHeroes.empty())
-	//	controller = std::make_unique<PeasantController>(*hero);
-	//else
+	if (myHeroes.empty())
+		controller = std::make_unique<PeasantController>(*hero);
+	else
 		controller = std::make_unique<PaladinController>(*hero);
 
 	hero->SetController(std::move(controller));
