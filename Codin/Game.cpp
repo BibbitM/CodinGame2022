@@ -5,6 +5,7 @@
 #include "Entity.h"
 #include "EntityDescription.h"
 #include "Rules.h"
+#include "Simulate.h"
 #include "StatsDescription.h"
 #include "Utils.h"
 
@@ -54,6 +55,26 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	for (const auto& hero : myHeroes)
 		hero->GetController()->Clear();
 
+	// First take care of dangerous enemies
+	std::vector<const Entity*> dangerousEnemies = GetDangerousEnemies();
+	std::vector<Entity*> heroes = GetHeroes();
+	for (const Entity* danger : dangerousEnemies)
+	{
+		std::sort(heroes.begin(), heroes.end(), [danger](const Entity* a, const Entity* b)
+		{
+			return Distance2(a->GetPosition(), danger->GetPosition()) < Distance2(b->GetPosition(), danger->GetPosition());
+		});
+
+		for (auto it = heroes.begin(); it != heroes.end(); ++it)
+		{
+			if ((*it)->GetController()->Attack(*danger))
+			{
+				heroes.erase(it);
+				break;
+			}
+		}
+	}
+
 	// Tick all heroes.
 	for (const auto& hero : myHeroes)
 		hero->GetController()->Tick(*this);
@@ -74,4 +95,46 @@ void Game::PossesEntity(Entity* hero)
 		controller = std::make_unique<PaladinController>(*hero);
 
 	hero->SetController(std::move(controller));
+}
+
+std::vector<const Entity*> Game::GetDangerousEnemies() const
+{
+	std::vector<const Entity*> dangerousEnemies;
+	dangerousEnemies.reserve(GetAllEntities().size());
+
+	// Get only enemies.
+	for (const auto& ent : GetAllEntities())
+	{
+		const auto& enemy = ent.second;
+		if (enemy->GetThreatFor() == ThreatFor::MyBase)
+			dangerousEnemies.push_back(enemy.get());
+	}
+
+	// Sort enemies by danger to the base.
+	std::sort(dangerousEnemies.begin(), dangerousEnemies.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aFTDD = Simulate::EnemyFramesToAttackBase(*a);
+		const int bFTDD = Simulate::EnemyFramesToAttackBase(*b);
+		if (aFTDD < bFTDD)
+			return true;
+		if (aFTDD > bFTDD)
+			return false;
+
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	return dangerousEnemies;
+}
+
+std::vector<Entity*> Game::GetHeroes()
+{
+	std::vector<Entity*> heroes;
+	heroes.reserve(myHeroes.size());
+
+	for (const std::shared_ptr<Entity>& hero : myHeroes)
+		heroes.push_back(hero.get());
+
+	return heroes;
 }

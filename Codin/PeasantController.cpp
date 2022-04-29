@@ -6,8 +6,17 @@
 #include <algorithm>
 #include <vector>
 
-void PeasantController::DoTick(const Game& game)
+bool PeasantController::Attack(const Entity& danger)
 {
+	SetTarget(danger.GetId(), danger.GetTargetPosition(), "PE-attackDanger");
+	return true;
+}
+
+void PeasantController::Tick(const Game& game)
+{
+	if (HasTarget())
+		return;
+
 	std::vector<Entity*> myEnemies;
 	myEnemies.reserve(game.GetAllEntities().size());
 	std::vector<Entity*> otherEnemies;

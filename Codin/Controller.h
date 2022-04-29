@@ -16,12 +16,13 @@ public:
 	virtual ~Controller() { }
 
 	void Clear();
-	void Tick(const Game& game);
+	virtual bool Attack(const Entity& danger) = 0;;
+	virtual void Tick(const Game& game) = 0;
 	void MakeMove(std::ostream& out) const;
 
 protected:
-	virtual void DoTick(const Game& game) = 0;
 	void SetTarget(int targetEntity, const Vector& targetPosition, std::string_view info);
+	bool HasTarget() const { return targetEntity != -1; }
 	static bool IsTargetedEntity(int entity, const Game& game);
 
 	const Entity& owner;

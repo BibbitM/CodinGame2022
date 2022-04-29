@@ -31,6 +31,9 @@ public:
 private:
 	void PossesEntity(Entity* hero);
 
+	std::vector<const Entity*> GetDangerousEnemies() const;
+	std::vector<Entity*> GetHeroes();
+
 	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
 	std::vector<std::shared_ptr<Entity>> myHeroes;
 	Vector basePosition{};

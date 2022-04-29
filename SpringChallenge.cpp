@@ -71,12 +71,13 @@ public:
 	virtual ~Controller() { }
 
 	void Clear();
-	void Tick(const Game& game);
+	virtual bool Attack(const Entity& danger) = 0;;
+	virtual void Tick(const Game& game) = 0;
 	void MakeMove(std::ostream& out) const;
 
 protected:
-	virtual void DoTick(const Game& game) = 0;
 	void SetTarget(int targetEntity, const Vector& targetPosition, std::string_view info);
+	bool HasTarget() const { return targetEntity != -1; }
 	static bool IsTargetedEntity(int entity, const Game& game);
 
 	const Entity& owner;
@@ -191,6 +192,9 @@ public:
 private:
 	void PossesEntity(Entity* hero);
 
+	std::vector<const Entity*> GetDangerousEnemies() const;
+	std::vector<Entity*> GetHeroes();
+
 	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
 	std::vector<std::shared_ptr<Entity>> myHeroes;
 	Vector basePosition{};
@@ -219,17 +223,12 @@ private:
 
 #include <iostream>
 
-#define LOG_TARGET 0
+#define LOG_TARGET 1
 
 void Controller::Clear()
 {
 	targetPosition = owner.GetPosition();
 	targetEntity = -1;
-}
-
-void Controller::Tick(const Game& game)
-{
-	DoTick(game);
 }
 
 void Controller::MakeMove(std::ostream& out) const
@@ -239,7 +238,7 @@ void Controller::MakeMove(std::ostream& out) const
 	else
 		out << "MOVE " << targetPosition;
 
-	out << ' ' << name << std::endl;
+	out << ' ' << name << owner.GetId() << std::endl;
 }
 
 void Controller::SetTarget(int entity, const Vector& pos, std::string_view info)
@@ -372,8 +371,8 @@ class PaladinController : public Controller
 public:
 	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
 
-protected:
-	virtual void DoTick(const Game& game) override;
+	virtual bool Attack(const Entity& danger) override;
+	virtual void Tick(const Game& game) override;
 
 private:
 	Vector DerermineIdleMove(const Game& game) const;
@@ -391,8 +390,8 @@ class PeasantController : public Controller
 public:
 	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
 
-protected:
-	virtual void DoTick(const Game& game) override;
+	virtual bool Attack(const Entity& danger) override;
+	virtual void Tick(const Game& game) override;
 };
 #pragma endregion ..\Codin\PeasantController.h
 // #include "Entity.h"
@@ -425,6 +424,24 @@ struct Rules
 	static constexpr int spellControlRange = 2200;
 };
 #pragma endregion ..\Codin\Rules.h
+// #include "Simulate.h"
+#pragma region ..\Codin\Simulate.h
+// #pragma once
+class Entity;
+struct Vector;
+
+class Simulate
+{
+public:
+	static Vector GetNearestBasePosition(const Entity& entity);
+	static void Update(Entity& entity);
+	static Vector PositionAfterFrames(const Entity& entity, int frames);
+	static int EnemyFramesToAttackBase(const Entity& entity);
+	static int HeroFramesToAttackEnemy(const Entity& hero, const Entity& enemy);
+	static int HeroFramesToCastSpell(const Entity& hero, const Entity& enemy, int spellRange);
+	static int FramesToKill(int healt);
+};
+#pragma endregion ..\Codin\Simulate.h
 // #include "StatsDescription.h"
 #pragma region ..\Codin\StatsDescription.h
 // #pragma once
@@ -486,6 +503,26 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	for (const auto& hero : myHeroes)
 		hero->GetController()->Clear();
 
+	// First take care of dangerous enemies
+	std::vector<const Entity*> dangerousEnemies = GetDangerousEnemies();
+	std::vector<Entity*> heroes = GetHeroes();
+	for (const Entity* danger : dangerousEnemies)
+	{
+		std::sort(heroes.begin(), heroes.end(), [danger](const Entity* a, const Entity* b)
+		{
+			return Distance2(a->GetPosition(), danger->GetPosition()) < Distance2(b->GetPosition(), danger->GetPosition());
+		});
+
+		for (auto it = heroes.begin(); it != heroes.end(); ++it)
+		{
+			if ((*it)->GetController()->Attack(*danger))
+			{
+				heroes.erase(it);
+				break;
+			}
+		}
+	}
+
 	// Tick all heroes.
 	for (const auto& hero : myHeroes)
 		hero->GetController()->Tick(*this);
@@ -507,6 +544,48 @@ void Game::PossesEntity(Entity* hero)
 
 	hero->SetController(std::move(controller));
 }
+
+std::vector<const Entity*> Game::GetDangerousEnemies() const
+{
+	std::vector<const Entity*> dangerousEnemies;
+	dangerousEnemies.reserve(GetAllEntities().size());
+
+	// Get only enemies.
+	for (const auto& ent : GetAllEntities())
+	{
+		const auto& enemy = ent.second;
+		if (enemy->GetThreatFor() == ThreatFor::MyBase)
+			dangerousEnemies.push_back(enemy.get());
+	}
+
+	// Sort enemies by danger to the base.
+	std::sort(dangerousEnemies.begin(), dangerousEnemies.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aFTDD = Simulate::EnemyFramesToAttackBase(*a);
+		const int bFTDD = Simulate::EnemyFramesToAttackBase(*b);
+		if (aFTDD < bFTDD)
+			return true;
+		if (aFTDD > bFTDD)
+			return false;
+
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	return dangerousEnemies;
+}
+
+std::vector<Entity*> Game::GetHeroes()
+{
+	std::vector<Entity*> heroes;
+	heroes.reserve(myHeroes.size());
+
+	for (const std::shared_ptr<Entity>& hero : myHeroes)
+		heroes.push_back(hero.get());
+
+	return heroes;
+}
 #pragma endregion ..\Codin\Game.cpp
 #pragma region ..\Codin\PaladinController.cpp
 // #include "PaladinController.h"
@@ -516,23 +595,6 @@ void Game::PossesEntity(Entity* hero)
 // #include "Math.h"
 // #include "Rules.h"
 // #include "Simulate.h"
-#pragma region ..\Codin\Simulate.h
-// #pragma once
-class Entity;
-struct Vector;
-
-class Simulate
-{
-public:
-	static Vector GetNearestBasePosition(const Entity& entity);
-	static void Update(Entity& entity);
-	static Vector PositionAfterFrames(const Entity& entity, int frames);
-	static int EnemyFramesToAttackBase(const Entity& entity);
-	static int HeroFramesToAttackEnemy(const Entity& hero, const Entity& enemy);
-	static int HeroFramesToCastSpell(const Entity& hero, const Entity& enemy, int spellRange);
-	static int FramesToKill(int healt);
-};
-#pragma endregion ..\Codin\Simulate.h
 // #include "Timer.h"
 #pragma region ..\Codin\Timer.h
 // #pragma once
@@ -575,13 +637,44 @@ private:
 #pragma endregion ..\Codin\Timer.h
 
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
-void PaladinController::DoTick(const Game& game)
-{
-	SetTarget(-1, DerermineIdleMove(game), "PC-idle");
+#define LOG_PALADIN_CONTROLLER 1
 
+bool PaladinController::Attack(const Entity& danger)
+{
+	const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(danger);
+	const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(owner, danger);
+	const int heroFrameToKill = Simulate::FramesToKill(danger.GetHealt());
+
+	constexpr int framesCanIgnore = 5;
+
+	// I cannot reach danger before he destroy the base.
+	// TODO: add spell check.
+	if (dangerFrameToAttackBase < heroFrameToAttackDanger)
+		return false;
+
+	// Check if I have time to attack other enemies.
+	if (dangerFrameToAttackBase > heroFrameToAttackDanger + heroFrameToKill + framesCanIgnore)
+		return false;
+
+	// I've to attack.
+#if LOG_PALADIN_CONTROLLER
+	std::cerr << "FB:" << dangerFrameToAttackBase << " FA:" << heroFrameToAttackDanger << " FK:" << heroFrameToKill << std::endl;
+#endif
+	SetTarget(danger.GetId(), Simulate::PositionAfterFrames(danger, heroFrameToAttackDanger), "PC-attack");
+	return true;
+}
+
+void PaladinController::Tick(const Game& game)
+{
 	FUNCTION_TIMER();
+
+	if (HasTarget())
+		return;
+
+	SetTarget(-1, DerermineIdleMove(game), "PC-idle");
 
 	// TODO: Move to a function
 	std::vector<Entity*> enemies;
@@ -595,77 +688,18 @@ void PaladinController::DoTick(const Game& game)
 			enemies.push_back(enemy.get());
 	}
 
-	// Find enemy that will destroy base in 1 move and move to him.
-	bool targetedDangerousEnemy = false;
-	{
-		std::vector<Entity*> dangerousEnemies = enemies;
-		if (!dangerousEnemies.empty())
-		{
-			// Sort to find dangerous enemy.
-			std::sort(dangerousEnemies.begin(), dangerousEnemies.end(), [this](Entity* a, Entity* b)
-			{
-				const int aFTDD = Simulate::EnemyFramesToAttackBase(*a);
-				const int bFTDD = Simulate::EnemyFramesToAttackBase(*b);
-				if (aFTDD < bFTDD)
-					return true;
-				if (aFTDD > bFTDD)
-					return false;
-
-				const int aDist2 = Distance2(a->GetPosition(), owner.GetPosition());
-				const int bDist2 = Distance2(b->GetPosition(), owner.GetPosition());
-				return aDist2 < bDist2;
-			});
-
-			// Move to dangerous enemy if I'll rich him before he destroy my base.
-			for (Entity* danger : dangerousEnemies)
-			{
-				const Vector dangerPosition = danger->GetPosition();
-
-				const int framesToDamageBase = Simulate::EnemyFramesToAttackBase(*danger);
-				const int framesToAttack = std::max(Sqrt(Distance2(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
-				const int framesToKill = danger->GetHealt() / Rules::heroDamage;
-
-				// Ignore danger if I cannot do anything with it.
-				const bool heroReachDangerBeforeHeWillDestroyTheBase = framesToAttack <= framesToDamageBase;
-				if (!heroReachDangerBeforeHeWillDestroyTheBase)
-					continue;
-
-				// Skip targeted entity.
-				if (IsTargetedEntity(danger->GetId(), game))
-					continue;
-
-				// Check if the enemy will destroy base even if I'll attack him.
-				// In this case more then one hero should attack him. If hero is close enough is should attack it.
-				const bool dangerDestroyBaseBeforeIReachHim = framesToDamageBase > framesToAttack + framesToKill;
-				if (dangerDestroyBaseBeforeIReachHim && framesToAttack < framesToDamageBase)
-				{
-					SetTarget(danger->GetId(), dangerPosition, "PC-danger-destroy-base");
-					targetedDangerousEnemy = true;
-					break;
-				}
-
-				//SetTarget(danger->GetId(), dangerPosition, "PC-danger");
-				//break;
-			}
-		}
-	}
-
 	// Find the nearest enemy and move to him.
-	if (!targetedDangerousEnemy)
+	if (!enemies.empty())
 	{
-		std::vector<Entity*> nearestEnemies = enemies;
-		if (!nearestEnemies.empty())
+		// Sort to find nearest enemy.
+		std::sort(enemies.begin(), enemies.end(), [this](Entity* a, Entity* b)
 		{
-			// Sort to find nearest enemy.
-			std::sort(nearestEnemies.begin(), nearestEnemies.end(), [this](Entity* a, Entity* b)
-			{
-				return Distance2(a->GetPosition(), owner.GetPosition()) < Distance2(b->GetPosition(), owner.GetPosition());
-			});
+			return Distance2(a->GetPosition(), owner.GetPosition()) < Distance2(b->GetPosition(), owner.GetPosition());
+		});
 
-			// Move to nearest enemy.
-			if (Distance2(nearestEnemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
-				SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
-		}
+		// Move to nearest enemy.
+		if (Distance2(enemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
+			SetTarget(enemies.front()->GetId(), enemies.front()->GetPosition(), "PC-nearest");
 	}
 }
 
@@ -673,8 +707,8 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 {
 	FUNCTION_TIMER();
 
-	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 2;
-	constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
+	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 4; // 1 / 2;
+	constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 3; // 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
 	constexpr int optDistToBase = (minDistToBase + maxDistToBase) / 2;
 	constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
 	constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
@@ -761,8 +795,17 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 #include <algorithm>
 #include <vector>
 
-void PeasantController::DoTick(const Game& game)
+bool PeasantController::Attack(const Entity& danger)
 {
+	SetTarget(danger.GetId(), danger.GetTargetPosition(), "PE-attackDanger");
+	return true;
+}
+
+void PeasantController::Tick(const Game& game)
+{
+	if (HasTarget())
+		return;
+
 	std::vector<Entity*> myEnemies;
 	myEnemies.reserve(game.GetAllEntities().size());
 	std::vector<Entity*> otherEnemies;

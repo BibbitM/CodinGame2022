@@ -6,17 +6,12 @@
 
 #include <iostream>
 
-#define LOG_TARGET 0
+#define LOG_TARGET 1
 
 void Controller::Clear()
 {
 	targetPosition = owner.GetPosition();
 	targetEntity = -1;
-}
-
-void Controller::Tick(const Game& game)
-{
-	DoTick(game);
 }
 
 void Controller::MakeMove(std::ostream& out) const
@@ -26,7 +21,7 @@ void Controller::MakeMove(std::ostream& out) const
 	else
 		out << "MOVE " << targetPosition;
 
-	out << ' ' << name << std::endl;
+	out << ' ' << name << owner.GetId() << std::endl;
 }
 
 void Controller::SetTarget(int entity, const Vector& pos, std::string_view info)

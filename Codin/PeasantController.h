@@ -7,6 +7,6 @@ class PeasantController : public Controller
 public:
 	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
 
-protected:
-	virtual void DoTick(const Game& game) override;
+	virtual bool Attack(const Entity& danger) override;
+	virtual void Tick(const Game& game) override;
 };
