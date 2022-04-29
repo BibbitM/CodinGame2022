@@ -146,65 +146,65 @@ TEST(SimulateTest, UpdateCalculateVelocityToReachBaseFarCorner)
 	EXPECT_EQ(entity.GetVelocity(), Vector({ 390, 84 }));
 }
 
-TEST(SimulateTest, FramesToDealDamageNoThreat)
+TEST(SimulateTest, EnemyFramesToDealDamageNoThreat)
 {
 	const Entity entity({ 9, 0, { 2907, 8353 }, 0, 0, 10, { -318, -241 }, 0, 0 }, 0);
 
-	EXPECT_EQ(Simulate::FramesToDealDamage(entity), std::numeric_limits<int>::max());
+	EXPECT_EQ(Simulate::EnemyFramesToDealDamage(entity), std::numeric_limits<int>::max());
 }
 
-TEST(SimulateTest, FramesToDealDamageNoThreatFarCorner)
+TEST(SimulateTest, EnemyFramesToDealDamageNoThreatFarCorner)
 {
 	const Entity entity({ 12, 0, { 15686, 1361 }, 0, 0, 8, { 319, 240 }, 0, 0 }, 0);
 
-	EXPECT_EQ(Simulate::FramesToDealDamage(entity), std::numeric_limits<int>::max());
+	EXPECT_EQ(Simulate::EnemyFramesToDealDamage(entity), std::numeric_limits<int>::max());
 }
 
-TEST(SimulateTest, FramesToDealDamageAtBase)
+TEST(SimulateTest, EnemyFramesToDealDamageAtBase)
 {
 	const Entity entity({ 157, 0, { 201, 521 }, 0, 0, 18, { -143, -373 }, 1, 1 }, 0);
 
-	EXPECT_EQ(Simulate::FramesToDealDamage(entity), 0);
+	EXPECT_EQ(Simulate::EnemyFramesToDealDamage(entity), 0);
 }
 
-TEST(SimulateTest, FramesToDealDamageAtBaseFarCorner)
+TEST(SimulateTest, EnemyFramesToDealDamageAtBaseFarCorner)
 {
 	const Entity entity({ 99, 0, { 17087, 8882 }, 0, 0, 5, { 390, 84 }, 1, 1 }, 0);
 
-	EXPECT_EQ(Simulate::FramesToDealDamage(entity), 0);
+	EXPECT_EQ(Simulate::EnemyFramesToDealDamage(entity), 0);
 }
 
-TEST(SimulateTest, FramesToDealDamageOneFrame)
+TEST(SimulateTest, EnemyFramesToDealDamageOneFrame)
 {
 	const Entity entity({ 157, 0, { 345, 894 }, 0, 0, 24, { -144, -373 }, 1, 1 }, 0);
 
-	EXPECT_EQ(Simulate::FramesToDealDamage(entity), 1);
+	EXPECT_EQ(Simulate::EnemyFramesToDealDamage(entity), 1);
 }
 
-TEST(SimulateTest, FramesToDealDamageOneFrameFarCorner)
+TEST(SimulateTest, EnemyFramesToDealDamageOneFrameFarCorner)
 {
 	const Entity entity({ 99, 0, { 16697, 8797 }, 0, 0, 7, { 390, 85 }, 1, 1 }, 0);
 
-	EXPECT_EQ(Simulate::FramesToDealDamage(entity), 1);
+	EXPECT_EQ(Simulate::EnemyFramesToDealDamage(entity), 1);
 }
 
-TEST(SimulateTest, FramesToDealDamageMultipleFrames)
+TEST(SimulateTest, EnemyFramesToDealDamageMultipleFrames)
 {
 	const Entity entity({ 157, 0, { 2593, 6004 }, 0, 0, 28, { -202, -345 }, 0, 1 }, 0);
 
-	EXPECT_EQ(Simulate::FramesToDealDamage(entity), 15);
+	EXPECT_EQ(Simulate::EnemyFramesToDealDamage(entity), 15);
 }
 
-TEST(SimulateTest, FramesToDealDamageMultipleFramesFarCorner)
+TEST(SimulateTest, EnemyFramesToDealDamageMultipleFramesFarCorner)
 {
 	const Entity entity({ 99, 0, { 12435, 8119 }, 0, 0, 21, { 362, -168 }, 0, 1 }, 0);
 
-	EXPECT_EQ(Simulate::FramesToDealDamage(entity), 12);
+	EXPECT_EQ(Simulate::EnemyFramesToDealDamage(entity), 12);
 }
 
-TEST(SimulateTest, FramesToDealDamageInvalidInput)
+TEST(SimulateTest, EnemyFramesToDealDamageInvalidInput)
 {
 	Entity entity({ 9, 0, { 2907, 8353 }, 0, 0, 10, { -318, -241 }, 0, 1 }, 0);
 
-	EXPECT_NE(Simulate::FramesToDealDamage(entity), std::numeric_limits<int>::max());
+	EXPECT_NE(Simulate::EnemyFramesToDealDamage(entity), std::numeric_limits<int>::max());
 }

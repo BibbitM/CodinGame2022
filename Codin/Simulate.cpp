@@ -20,7 +20,7 @@ void Simulate::Update(Entity& entity)
 	}
 }
 
-int Simulate::FramesToDealDamage(const Entity& entity)
+int Simulate::EnemyFramesToDealDamage(const Entity& entity)
 {
 	if (entity.GetThreatFor() == ThreatFor::None)
 		return std::numeric_limits<int>::max();

@@ -526,7 +526,7 @@ class Simulate
 public:
 	static Vector GetNearestBasePosition(const Entity& entity);
 	static void Update(Entity& entity);
-	static int FramesToDealDamage(const Entity& entity);
+	static int EnemyFramesToDealDamage(const Entity& entity);
 };
 #pragma endregion ..\Codin\Simulate.h
 // #include "Timer.h"
@@ -617,8 +617,8 @@ void PaladinController::DoTick(const Game& game)
 			// Sort to find dangerous enemy.
 			std::sort(dangerousEnemies.begin(), dangerousEnemies.end(), [this](Entity* a, Entity* b)
 			{
-				const int aFTDD = Simulate::FramesToDealDamage(*a);
-				const int bFTDD = Simulate::FramesToDealDamage(*b);
+				const int aFTDD = Simulate::EnemyFramesToDealDamage(*a);
+				const int bFTDD = Simulate::EnemyFramesToDealDamage(*b);
 				if (aFTDD < bFTDD)
 					return true;
 				if (aFTDD > bFTDD)
@@ -634,7 +634,7 @@ void PaladinController::DoTick(const Game& game)
 			{
 				const Vector dangerPosition = danger->GetPosition();
 
-				const int framesToDamageBase = Simulate::FramesToDealDamage(*danger);
+				const int framesToDamageBase = Simulate::EnemyFramesToDealDamage(*danger);
 				const int framesToAttack = std::max(Sqrt(Distance2(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
 				const int framesToKill = danger->GetHealt() / Rules::heroDamage;
 
@@ -807,7 +807,7 @@ void Simulate::Update(Entity& entity)
 	}
 }
 
-int Simulate::FramesToDealDamage(const Entity& entity)
+int Simulate::EnemyFramesToDealDamage(const Entity& entity)
 {
 	if (entity.GetThreatFor() == ThreatFor::None)
 		return std::numeric_limits<int>::max();
