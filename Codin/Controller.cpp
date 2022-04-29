@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#define LOG_TARGET 0
+
 void Controller::Clear()
 {
 	targetPosition = owner.GetPosition();
@@ -32,8 +34,11 @@ void Controller::SetTarget(int entity, const Vector& pos, std::string_view info)
 	targetEntity = entity;
 	targetPosition = pos;
 
-	TOUCH(info);
+#if LOG_TARGET
 	std::cerr << "H:" << owner.GetId() << " T:" << entity << ' ' << info << std::endl;
+#else
+	TOUCH(info);
+#endif
 }
 
 bool Controller::IsTargetedEntity(int entity, const Game& game)

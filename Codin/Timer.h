@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string_view>
 
-#define MEASURE_EXECUTION_TIME 1
+#define MEASURE_EXECUTION_TIME 0
 
 // https://stackoverflow.com/questions/22387586/measuring-execution-time-of-a-function-in-c
 
