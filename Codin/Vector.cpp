@@ -19,7 +19,7 @@ Vector Vector::Lengthed(int length) const
 	if (!x && !y)
 		return {};
 
-	float flen = std::sqrt(static_cast<float>(LengthSqr()));
+	float flen = std::sqrt(static_cast<float>(Length2()));
 	float fx = static_cast<float>(x) / flen * static_cast<float>(length);
 	float fy = static_cast<float>(y) / flen * static_cast<float>(length);
 

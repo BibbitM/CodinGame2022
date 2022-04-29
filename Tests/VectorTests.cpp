@@ -103,24 +103,24 @@ TEST(VectorTest, DivisionInPlace)
 	EXPECT_EQ(a, div);
 }
 
-TEST(VectorTest, DistanceSqr)
+TEST(VectorTest, Distance2)
 {
-	EXPECT_EQ(DistanceSqr(Vector({ 0, 0 }), Vector({ 0, 0 })), 0);
-	EXPECT_EQ(DistanceSqr(Vector({ 11, 230 }), Vector({ 11, 230 })), 0);
-	EXPECT_EQ(DistanceSqr(Vector({ 100, 0 }), Vector({ 200, 0 })), 10000);
-	EXPECT_EQ(DistanceSqr(Vector({ 0, 1 }), Vector({ 0, 2 })), 1 );
-	EXPECT_EQ(DistanceSqr(Vector({ 3, 4 }), Vector({ 5, 6 })), 8);
+	EXPECT_EQ(Distance2(Vector({ 0, 0 }), Vector({ 0, 0 })), 0);
+	EXPECT_EQ(Distance2(Vector({ 11, 230 }), Vector({ 11, 230 })), 0);
+	EXPECT_EQ(Distance2(Vector({ 100, 0 }), Vector({ 200, 0 })), 10000);
+	EXPECT_EQ(Distance2(Vector({ 0, 1 }), Vector({ 0, 2 })), 1 );
+	EXPECT_EQ(Distance2(Vector({ 3, 4 }), Vector({ 5, 6 })), 8);
 }
 
-TEST(VectorTest, LengthSqr)
+TEST(VectorTest, Length2)
 {
-	EXPECT_EQ(Vector({ 0, 0 }).LengthSqr(), 0);
-	EXPECT_EQ(Vector({ 1, 0 }).LengthSqr(), 1);
-	EXPECT_EQ(Vector({ 0, -1 }).LengthSqr(), 1);
-	EXPECT_EQ(Vector({ -3, 0 }).LengthSqr(), 9);
-	EXPECT_EQ(Vector({ 0, 2 }).LengthSqr(), 4);
-	EXPECT_EQ(Vector({ 3, 4 }).LengthSqr(), 25);
-	EXPECT_EQ(Vector({ -10, -10 }).LengthSqr(), 200);
+	EXPECT_EQ(Vector({ 0, 0 }).Length2(), 0);
+	EXPECT_EQ(Vector({ 1, 0 }).Length2(), 1);
+	EXPECT_EQ(Vector({ 0, -1 }).Length2(), 1);
+	EXPECT_EQ(Vector({ -3, 0 }).Length2(), 9);
+	EXPECT_EQ(Vector({ 0, 2 }).Length2(), 4);
+	EXPECT_EQ(Vector({ 3, 4 }).Length2(), 25);
+	EXPECT_EQ(Vector({ -10, -10 }).Length2(), 200);
 }
 
 TEST(VectorTest, Lengthed)

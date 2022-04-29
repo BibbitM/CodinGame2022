@@ -13,7 +13,7 @@ void Simulate::Update(Entity& entity)
 	entity.SetPosition(entity.GetTargetPosition());
 
 	const Vector basePosition = GetNearestBasePosition(entity);
-	if (DistanceSqr(entity.GetPosition(), basePosition) <= Sqr(Rules::monsterBaseAttackRange))
+	if (Distance2(entity.GetPosition(), basePosition) <= Pow2(Rules::monsterBaseAttackRange))
 	{
 		entity.SetNearBase(true);
 		entity.SetVelocity((basePosition - entity.GetPosition()).Lengthed(Rules::monsterMoveRange));
@@ -27,11 +27,11 @@ int Simulate::FramesToDealDamage(const Entity& entity)
 
 	const Vector basePosition = GetNearestBasePosition(entity);
 
-	constexpr int maxFramesToDealDamageSqr = static_cast<int>(static_cast<float>(Rules::mapSize.LengthSqr()) / static_cast<float>(Sqr(Rules::monsterMoveRange)));
+	constexpr int maxFramesToDealDamage2 = static_cast<int>(static_cast<float>(Rules::mapSize.Length2()) / static_cast<float>(Pow2(Rules::monsterMoveRange)));
 	int framesToDealDamge = 0;
 	Entity simulatedEntity{ entity };
-	while (DistanceSqr(simulatedEntity.GetTargetPosition(), basePosition) > Sqr(Rules::monsterBaseDestroyRange)
-		&& Sqr(framesToDealDamge) < maxFramesToDealDamageSqr)
+	while (Distance2(simulatedEntity.GetTargetPosition(), basePosition) > Pow2(Rules::monsterBaseDestroyRange)
+		&& Pow2(framesToDealDamge) < maxFramesToDealDamage2)
 	{
 		Update(simulatedEntity);
 		++framesToDealDamge;

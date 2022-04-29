@@ -36,11 +36,11 @@ void PaladinController::DoTick(const Game& game)
 			// Sort to find nearest enemy.
 			std::sort(nearestEnemies.begin(), nearestEnemies.end(), [this](Entity* a, Entity* b)
 			{
-				return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
+				return Distance2(a->GetPosition(), owner.GetPosition()) < Distance2(b->GetPosition(), owner.GetPosition());
 			});
 
 			// Move to nearest enemy.
-			if (DistanceSqr(nearestEnemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
+			if (Distance2(nearestEnemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
 				SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
 		}
 	}
@@ -61,9 +61,9 @@ void PaladinController::DoTick(const Game& game)
 				if (aFTDD > bFTDD)
 					return false;
 
-				const int aDistSqr = DistanceSqr(a->GetPosition(), owner.GetPosition());
-				const int bDistSqr = DistanceSqr(b->GetPosition(), owner.GetPosition());
-				return aDistSqr < bDistSqr;
+				const int aDist2 = Distance2(a->GetPosition(), owner.GetPosition());
+				const int bDist2 = Distance2(b->GetPosition(), owner.GetPosition());
+				return aDist2 < bDist2;
 			});
 
 			// Move to dangerous enemy if I'll rich him before he destroy my base.
@@ -72,7 +72,7 @@ void PaladinController::DoTick(const Game& game)
 				const Vector dangerPosition = danger->GetPosition();
 
 				const int framesToDamageBase = Simulate::FramesToDealDamage(*danger);
-				const int framesToAttack = std::max(Sqrt(DistanceSqr(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
+				const int framesToAttack = std::max(Sqrt(Distance2(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
 				const int framesToKill = danger->GetHealt() / Rules::heroDamage;
 
 				// Ignore danger if I cannot do anything with it.
@@ -117,11 +117,11 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 	Vector idlePosition = owner.GetPosition();
 
 	// Set minimal distance to the base.
-	const int distToBaseSqr = DistanceSqr(owner.GetPosition(), game.GetBasePosition());
-	if (distToBaseSqr < Sqr(minDistToBase))
-		idlePosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(optDistToBase - Sqrt(distToBaseSqr));
-	else if (distToBaseSqr > Sqr(maxDistToBase))
-		idlePosition += (game.GetBasePosition() - owner.GetPosition()).Lengthed(Sqrt(distToBaseSqr) - optDistToBase);
+	const int distToBase2 = Distance2(owner.GetPosition(), game.GetBasePosition());
+	if (distToBase2 < Pow2(minDistToBase))
+		idlePosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(optDistToBase - Sqrt(distToBase2));
+	else if (distToBase2 > Pow2(maxDistToBase))
+		idlePosition += (game.GetBasePosition() - owner.GetPosition()).Lengthed(Sqrt(distToBase2) - optDistToBase);
 
 	// Set minimal distance to the map edges.
 	if (owner.GetPosition().x < minDistToEdge)
@@ -139,9 +139,9 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 		if (hero.get() == &owner)
 			continue;
 
-		const int distToHeroSqr = DistanceSqr(owner.GetPosition(), hero->GetPosition());
-		if (distToHeroSqr < Sqr(minDistToHero))
-			idlePosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distToHeroSqr)) / 2);
+		const int distToHero2 = Distance2(owner.GetPosition(), hero->GetPosition());
+		if (distToHero2 < Pow2(minDistToHero))
+			idlePosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distToHero2)) / 2);
 	}
 
 	// Try to move to near enemies.
@@ -153,9 +153,9 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 		if (enemy->GetType() != EntityType::Monster)
 			continue;
 
-		const int distToEnemySqr = DistanceSqr(enemy->GetPosition(), owner.GetPosition());
-		if (distToEnemySqr < Sqr(sensDistToEnemy) && distToEnemySqr > Sqr(optDistToEnemy))
-			idlePosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToEnemySqr) - optDistToEnemy);
+		const int distToEnemy2 = Distance2(enemy->GetPosition(), owner.GetPosition());
+		if (distToEnemy2 < Pow2(sensDistToEnemy) && distToEnemy2 > Pow2(optDistToEnemy))
+			idlePosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToEnemy2) - optDistToEnemy);
 	}
 
 	bool hasAnyThreat = false;
@@ -169,15 +169,15 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 		if (enemy->GetThreatFor() != ThreatFor::MyBase)
 			continue;
 
-		const int distToThreatSqr = DistanceSqr(enemy->GetPosition(), owner.GetPosition());
-		if (distToThreatSqr < Sqr(sensDistToThreat) && distToThreatSqr > Sqr(optDistToThreat))
+		const int distToThreat2 = Distance2(enemy->GetPosition(), owner.GetPosition());
+		if (distToThreat2 < Pow2(sensDistToThreat) && distToThreat2 > Pow2(optDistToThreat))
 		{
 			if (!hasAnyThreat)
 			{
 				idlePosition = owner.GetPosition();
 				hasAnyThreat = true;
 			}
-			idlePosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToThreatSqr) - optDistToThreat);
+			idlePosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToThreat2) - optDistToThreat);
 		}
 	}
 	return idlePosition;

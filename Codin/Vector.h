@@ -22,13 +22,13 @@ struct Vector
 	Vector operator/(int b) const { return Vector{ x / b, y / b }; }
 	Vector& operator/=(int b) { x /= b; y /= b; return *this; }
 
-	constexpr int LengthSqr() const { return Sqr(x) + Sqr(y); }
+	constexpr int Length2() const { return Pow2(x) + Pow2(y); }
 	Vector Lengthed(int length) const;
 };
 
-inline int DistanceSqr(const Vector& a, const Vector& b)
+inline int Distance2(const Vector& a, const Vector& b)
 {
-	return Sqr(a.x - b.x) + Sqr(a.y - b.y);
+	return Pow2(a.x - b.x) + Pow2(a.y - b.y);
 }
 
 std::istream& operator>>(std::istream& in, Vector& vec);

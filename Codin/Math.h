@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-constexpr inline int Sqr(int val)
+constexpr inline int Pow2(int val)
 {
 	return val * val;
 }

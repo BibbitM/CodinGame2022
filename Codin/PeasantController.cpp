@@ -21,7 +21,7 @@ void PeasantController::DoTick(const Game& game)
 			otherEnemies.push_back(ent.second.get());
 	}
 
-	auto compareEnemyDist = [&game](Entity* a, Entity* b) { return DistanceSqr(a->GetTargetPosition(), game.GetBasePosition()) < DistanceSqr(b->GetTargetPosition(), game.GetBasePosition()); };
+	auto compareEnemyDist = [&game](Entity* a, Entity* b) { return Distance2(a->GetTargetPosition(), game.GetBasePosition()) < Distance2(b->GetTargetPosition(), game.GetBasePosition()); };
 
 	if (!myEnemies.empty())
 	{
