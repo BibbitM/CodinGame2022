@@ -5,6 +5,7 @@
 #include "Math.h"
 #include "Rules.h"
 #include "Simulate.h"
+#include "Timer.h"
 
 #include <algorithm>
 #include <vector>
@@ -13,6 +14,7 @@ void PaladinController::DoTick(const Game& game)
 {
 	SetTarget(-1, DerermineIdleMove(game), "PC-idle");
 
+	FUNCTION_TIMER();
 
 	// TODO: Move to a function
 	std::vector<Entity*> enemies;
@@ -26,7 +28,6 @@ void PaladinController::DoTick(const Game& game)
 			enemies.push_back(enemy.get());
 	}
 
-
 	// Find the nearest enemy and move to him.
 	{
 		std::vector<Entity*> nearestEnemies = enemies;
@@ -39,7 +40,8 @@ void PaladinController::DoTick(const Game& game)
 			});
 
 			// Move to nearest enemy.
-			SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
+			if (DistanceSqr(nearestEnemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
+				SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
 		}
 	}
 
@@ -58,39 +60,50 @@ void PaladinController::DoTick(const Game& game)
 					return true;
 				if (aFTDD > bFTDD)
 					return false;
-				return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
+
+				const int aDistSqr = DistanceSqr(a->GetPosition(), owner.GetPosition());
+				const int bDistSqr = DistanceSqr(b->GetPosition(), owner.GetPosition());
+				return aDistSqr < bDistSqr;
 			});
 
-			// Move to dangerous enemy if I'll rich him before him destroy my base.
+			// Move to dangerous enemy if I'll rich him before he destroy my base.
 			for (Entity* danger : dangerousEnemies)
 			{
 				const Vector dangerPosition = danger->GetPosition();
 
 				const int framesToDamageBase = Simulate::FramesToDealDamage(*danger);
-				const int framesToKill = std::max(Sqrt(DistanceSqr(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
-				if (framesToDamageBase > framesToKill + 2)
-					continue;
-				if (framesToDamageBase + 2 < framesToKill)
+				const int framesToAttack = std::max(Sqrt(DistanceSqr(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
+				const int framesToKill = danger->GetHealt() / Rules::heroDamage;
+
+				// Ignore danger if I cannot do anything with it.
+				const bool heroReachDangerBeforeHeWillDestroyTheBase = framesToAttack <= framesToDamageBase;
+				if (!heroReachDangerBeforeHeWillDestroyTheBase)
 					continue;
 
-				if (framesToDamageBase <= 1 && framesToKill <= 2)
+				// Check if the enemy will destroy base even if I'll attack him.
+				// In this case more then one hero should attack him. If hero is close enough is should attack it.
+				const bool dangerDestroyBaseBeforeIReachHim = framesToDamageBase > framesToAttack + framesToKill;
+				if (dangerDestroyBaseBeforeIReachHim && framesToAttack < framesToDamageBase)
 				{
-					SetTarget(danger->GetId(), dangerPosition, "PC-danger-near-base");
+					SetTarget(danger->GetId(), dangerPosition, "PC-danger-destroy-base");
 					break;
 				}
 
-				if (IsTargetedEntity(danger->GetId(), game))
-					continue;
+				//// Skip targeted entity.
+				//if (IsTargetedEntity(danger->GetId(), game))
+				//	continue;
 
-				SetTarget(danger->GetId(), dangerPosition, "PC-danger");
+				//SetTarget(danger->GetId(), dangerPosition, "PC-danger");
+				//break;
 			}
 		}
 	}
-
 }
 
 Vector PaladinController::DerermineIdleMove(const Game& game) const
 {
+	FUNCTION_TIMER();
+
 	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 2;
 	constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
 	constexpr int optDistToBase = (minDistToBase + maxDistToBase) / 2;

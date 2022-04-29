@@ -2,6 +2,7 @@
 
 #include "Entity.h"
 #include "Game.h"
+#include "Utils.h"
 
 #include <iostream>
 
@@ -31,6 +32,7 @@ void Controller::SetTarget(int entity, const Vector& pos, std::string_view info)
 	targetEntity = entity;
 	targetPosition = pos;
 
+	TOUCH(info);
 	std::cerr << "H:" << owner.GetId() << " T:" << entity << ' ' << info << std::endl;
 }
 

@@ -195,6 +195,22 @@ private:
 	int mana{};
 };
 #pragma endregion ..\Codin\Game.h
+// #include "Utils.h"
+#pragma region ..\Codin\Utils.h
+// #pragma once
+/// Mark that given parameter is not used at all in the function.
+#define UNUSED(x) (void)(x)
+/// Mark that given parameter is not used in given code path.
+#define TOUCH(x) (void)(x)
+
+// https://stackoverflow.com/questions/1082192/how-to-generate-random-variable-names-in-c-using-macros
+// One level of macro indirection is required in order to resolve __COUNTER__,
+// and get varname1 instead of varname__COUNTER__.
+#define CONCAT(a, b) CONCAT_INNER(a, b)
+#define CONCAT_INNER(a, b) a ## b
+
+#define UNIQUE_NAME(base) CONCAT(base, __COUNTER__)
+#pragma endregion ..\Codin\Utils.h
 
 #include <iostream>
 
@@ -224,6 +240,7 @@ void Controller::SetTarget(int entity, const Vector& pos, std::string_view info)
 	targetEntity = entity;
 	targetPosition = pos;
 
+	TOUCH(info);
 	std::cerr << "H:" << owner.GetId() << " T:" << entity << ' ' << info << std::endl;
 }
 
@@ -400,10 +417,6 @@ struct StatsDescription
 std::istream& operator>>(std::istream& in, StatsDescription& statsDesc);
 #pragma endregion ..\Codin\StatsDescription.h
 // #include "Utils.h"
-#pragma region ..\Codin\Utils.h
-// #pragma once
-#define UNUSED(x) (void)(x)
-#pragma endregion ..\Codin\Utils.h
 
 #include <algorithm>
 #include <cassert>
@@ -494,6 +507,46 @@ public:
 	static int FramesToDealDamage(const Entity& entity);
 };
 #pragma endregion ..\Codin\Simulate.h
+// #include "Timer.h"
+#pragma region ..\Codin\Timer.h
+// #pragma once
+// #include "Utils.h"
+
+#include <chrono>
+#include <iostream>
+#include <string_view>
+
+#define MEASURE_EXECUTION_TIME 1
+
+// https://stackoverflow.com/questions/22387586/measuring-execution-time-of-a-function-in-c
+
+class MeasureTimer
+{
+public:
+	MeasureTimer(std::string_view scopeName)
+		: start(std::chrono::high_resolution_clock::now())
+		, functionName(scopeName)
+	{}
+
+	~MeasureTimer()
+	{
+		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+		std::cerr << functionName << ' ' << std::chrono::duration<float, std::milli>(end - start).count() << "ms" << std::endl;
+	}
+
+private:
+	std::chrono::high_resolution_clock::time_point start;
+	std::string_view functionName;
+};
+
+#if MEASURE_EXECUTION_TIME
+#define FUNCTION_TIMER() MeasureTimer UNIQUE_NAME(functionTimer){ __FUNCTION__ }
+#define SCOPE_TIMER(scopeName) MeasureTimer UNIQUE_NAME(scopeTimer){ scopeName }
+#else
+#define FUNCTION_TIMER() (void)(0)
+#define SCOPE_TIMER() (void)(0)
+#endif
+#pragma endregion ..\Codin\Timer.h
 
 #include <algorithm>
 #include <vector>
@@ -502,6 +555,7 @@ void PaladinController::DoTick(const Game& game)
 {
 	SetTarget(-1, DerermineIdleMove(game), "PC-idle");
 
+	FUNCTION_TIMER();
 
 	// TODO: Move to a function
 	std::vector<Entity*> enemies;
@@ -515,7 +569,6 @@ void PaladinController::DoTick(const Game& game)
 			enemies.push_back(enemy.get());
 	}
 
-
 	// Find the nearest enemy and move to him.
 	{
 		std::vector<Entity*> nearestEnemies = enemies;
@@ -528,7 +581,8 @@ void PaladinController::DoTick(const Game& game)
 			});
 
 			// Move to nearest enemy.
-			SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
+			if (DistanceSqr(nearestEnemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
+				SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
 		}
 	}
 
@@ -547,39 +601,50 @@ void PaladinController::DoTick(const Game& game)
 					return true;
 				if (aFTDD > bFTDD)
 					return false;
-				return DistanceSqr(a->GetPosition(), owner.GetPosition()) < DistanceSqr(b->GetPosition(), owner.GetPosition());
+
+				const int aDistSqr = DistanceSqr(a->GetPosition(), owner.GetPosition());
+				const int bDistSqr = DistanceSqr(b->GetPosition(), owner.GetPosition());
+				return aDistSqr < bDistSqr;
 			});
 
-			// Move to dangerous enemy if I'll rich him before him destroy my base.
+			// Move to dangerous enemy if I'll rich him before he destroy my base.
 			for (Entity* danger : dangerousEnemies)
 			{
 				const Vector dangerPosition = danger->GetPosition();
 
 				const int framesToDamageBase = Simulate::FramesToDealDamage(*danger);
-				const int framesToKill = std::max(Sqrt(DistanceSqr(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
-				if (framesToDamageBase > framesToKill + 2)
-					continue;
-				if (framesToDamageBase + 2 < framesToKill)
+				const int framesToAttack = std::max(Sqrt(DistanceSqr(owner.GetPosition(), dangerPosition)) - Rules::heroAttackRange, 0) / Rules::heroMoveRange;
+				const int framesToKill = danger->GetHealt() / Rules::heroDamage;
+
+				// Ignore danger if I cannot do anything with it.
+				const bool heroReachDangerBeforeHeWillDestroyTheBase = framesToAttack <= framesToDamageBase;
+				if (!heroReachDangerBeforeHeWillDestroyTheBase)
 					continue;
 
-				if (framesToDamageBase <= 1 && framesToKill <= 2)
+				// Check if the enemy will destroy base even if I'll attack him.
+				// In this case more then one hero should attack him. If hero is close enough is should attack it.
+				const bool dangerDestroyBaseBeforeIReachHim = framesToDamageBase > framesToAttack + framesToKill;
+				if (dangerDestroyBaseBeforeIReachHim && framesToAttack < framesToDamageBase)
 				{
-					SetTarget(danger->GetId(), dangerPosition, "PC-danger-near-base");
+					SetTarget(danger->GetId(), dangerPosition, "PC-danger-destroy-base");
 					break;
 				}
 
-				if (IsTargetedEntity(danger->GetId(), game))
-					continue;
+				//// Skip targeted entity.
+				//if (IsTargetedEntity(danger->GetId(), game))
+				//	continue;
 
-				SetTarget(danger->GetId(), dangerPosition, "PC-danger");
+				//SetTarget(danger->GetId(), dangerPosition, "PC-danger");
+				//break;
 			}
 		}
 	}
-
 }
 
 Vector PaladinController::DerermineIdleMove(const Game& game) const
 {
+	FUNCTION_TIMER();
+
 	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 2;
 	constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
 	constexpr int optDistToBase = (minDistToBase + maxDistToBase) / 2;
@@ -727,11 +792,11 @@ int Simulate::FramesToDealDamage(const Entity& entity)
 
 	const Vector basePosition = GetNearestBasePosition(entity);
 
-	constexpr int maxFramesToDealDamage = static_cast<int>(static_cast<float>(Rules::mapSize.LengthSqr()) / static_cast<float>(Rules::monsterMoveRange));
+	constexpr int maxFramesToDealDamageSqr = static_cast<int>(static_cast<float>(Rules::mapSize.LengthSqr()) / static_cast<float>(Sqr(Rules::monsterMoveRange)));
 	int framesToDealDamge = 0;
 	Entity simulatedEntity{ entity };
 	while (DistanceSqr(simulatedEntity.GetTargetPosition(), basePosition) > Sqr(Rules::monsterBaseDestroyRange)
-		&& framesToDealDamge < maxFramesToDealDamage)
+		&& Sqr(framesToDealDamge) < maxFramesToDealDamageSqr)
 	{
 		Update(simulatedEntity);
 		++framesToDealDamge;
