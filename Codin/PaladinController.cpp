@@ -28,25 +28,8 @@ void PaladinController::DoTick(const Game& game)
 			enemies.push_back(enemy.get());
 	}
 
-	// Find the nearest enemy and move to him.
-	{
-		std::vector<Entity*> nearestEnemies = enemies;
-		if (!nearestEnemies.empty())
-		{
-			// Sort to find nearest enemy.
-			std::sort(nearestEnemies.begin(), nearestEnemies.end(), [this](Entity* a, Entity* b)
-			{
-				return Distance2(a->GetPosition(), owner.GetPosition()) < Distance2(b->GetPosition(), owner.GetPosition());
-			});
-
-			// Move to nearest enemy.
-			if (Distance2(nearestEnemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
-				SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
-		}
-	}
-
-
 	// Find enemy that will destroy base in 1 move and move to him.
+	bool targetedDangerousEnemy = false;
 	{
 		std::vector<Entity*> dangerousEnemies = enemies;
 		if (!dangerousEnemies.empty())
@@ -80,22 +63,41 @@ void PaladinController::DoTick(const Game& game)
 				if (!heroReachDangerBeforeHeWillDestroyTheBase)
 					continue;
 
+				// Skip targeted entity.
+				if (IsTargetedEntity(danger->GetId(), game))
+					continue;
+
 				// Check if the enemy will destroy base even if I'll attack him.
 				// In this case more then one hero should attack him. If hero is close enough is should attack it.
 				const bool dangerDestroyBaseBeforeIReachHim = framesToDamageBase > framesToAttack + framesToKill;
 				if (dangerDestroyBaseBeforeIReachHim && framesToAttack < framesToDamageBase)
 				{
 					SetTarget(danger->GetId(), dangerPosition, "PC-danger-destroy-base");
+					targetedDangerousEnemy = true;
 					break;
 				}
-
-				//// Skip targeted entity.
-				//if (IsTargetedEntity(danger->GetId(), game))
-				//	continue;
 
 				//SetTarget(danger->GetId(), dangerPosition, "PC-danger");
 				//break;
 			}
+		}
+	}
+
+	// Find the nearest enemy and move to him.
+	if (!targetedDangerousEnemy)
+	{
+		std::vector<Entity*> nearestEnemies = enemies;
+		if (!nearestEnemies.empty())
+		{
+			// Sort to find nearest enemy.
+			std::sort(nearestEnemies.begin(), nearestEnemies.end(), [this](Entity* a, Entity* b)
+			{
+				return Distance2(a->GetPosition(), owner.GetPosition()) < Distance2(b->GetPosition(), owner.GetPosition());
+			});
+
+			// Move to nearest enemy.
+			if (Distance2(nearestEnemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
+				SetTarget(nearestEnemies.front()->GetId(), nearestEnemies.front()->GetPosition(), "PC-nearest");
 		}
 	}
 }
