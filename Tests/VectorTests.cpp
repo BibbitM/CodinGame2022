@@ -103,6 +103,13 @@ TEST(VectorTest, DivisionInPlace)
 	EXPECT_EQ(a, div);
 }
 
+TEST(VectorTest, Nagate)
+{
+	EXPECT_EQ(-Vector({ 0, 0 }), Vector({ 0, 0 }));
+	EXPECT_EQ(-Vector({ 1, 1 }), Vector({ -1, -1 }));
+	EXPECT_EQ(-Vector({ -3, -5 }), Vector({ 3, 5 }));
+}
+
 TEST(VectorTest, Distance2)
 {
 	EXPECT_EQ(Distance2(Vector({ 0, 0 }), Vector({ 0, 0 })), 0);

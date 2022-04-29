@@ -141,7 +141,7 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 
 		const int distToHero2 = Distance2(owner.GetPosition(), hero->GetPosition());
 		if (distToHero2 < Pow2(minDistToHero))
-			idlePosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distToHero2)) / 2);
+			idlePosition += owner.GetAwayDirection(*hero).Lengthed((minDistToHero - Sqrt(distToHero2)) / 2);
 	}
 
 	// Try to move to near enemies.

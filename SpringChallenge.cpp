@@ -28,18 +28,21 @@ struct Vector
 	int x, y;
 
 	bool operator==(const Vector& b) const { return x == b.x && y == b.y; }
+	bool operator!=(const Vector& b) const { return !(*this == b); }
 
-	Vector operator+(const Vector& b) const { return Vector{ x + b.x, y + b.y }; }
+	Vector operator+(const Vector& b) const { return { x + b.x, y + b.y }; }
 	Vector& operator+=(const Vector& b) { x += b.x; y += b.y; return *this; }
 
-	Vector operator-(const Vector& b) const { return Vector{ x - b.x, y - b.y }; }
+	Vector operator-(const Vector& b) const { return { x - b.x, y - b.y }; }
 	Vector& operator-=(const Vector& b) { x -= b.x; y -= b.y; return *this; }
 
-	Vector operator*(int b) const { return Vector{ x * b, y * b }; }
+	Vector operator*(int b) const { return { x * b, y * b }; }
 	Vector& operator*=(int b) { x *= b; y *= b; return *this; }
 
-	Vector operator/(int b) const { return Vector{ x / b, y / b }; }
+	Vector operator/(int b) const { return { x / b, y / b }; }
 	Vector& operator/=(int b) { x /= b; y /= b; return *this; }
+
+	Vector operator-() const { return { -x, -y }; };
 
 	constexpr int Length2() const { return Pow2(x) + Pow2(y); }
 	Vector Lengthed(int length) const;
@@ -136,6 +139,8 @@ public:
 	void SetPosition(const Vector& pos) { position = pos; }
 	void SetVelocity(const Vector& vel) { velocity = vel; }
 	void SetNearBase(bool isNear) { isNearBase = isNear; }
+
+	Vector GetAwayDirection(const Entity& other) const;
 
 private:
 	std::unique_ptr<Controller> controllingBrain{};
@@ -318,6 +323,18 @@ void Entity::Actualize(const EntityDescription& entityDesc, int frame)
 void Entity::SetController(std::unique_ptr<Controller> controller)
 {
 	controllingBrain = std::move(controller);
+}
+
+Vector Entity::GetAwayDirection(const Entity& other) const
+{
+	if (GetPosition() != other.GetPosition())
+		return GetPosition() - other.GetPosition();
+
+	Vector awayDirection{
+		(id < other.id) ? -1 : 1,
+		(id % 2 < other.id % 2) ? -1 : 1,
+	};
+	return awayDirection;
 }
 #pragma endregion ..\Codin\Entity.cpp
 #pragma region ..\Codin\EntityDescription.cpp
@@ -682,7 +699,7 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 
 		const int distToHero2 = Distance2(owner.GetPosition(), hero->GetPosition());
 		if (distToHero2 < Pow2(minDistToHero))
-			idlePosition += (owner.GetPosition() - hero->GetPosition()).Lengthed((minDistToHero - Sqrt(distToHero2)) / 2);
+			idlePosition += owner.GetAwayDirection(*hero).Lengthed((minDistToHero - Sqrt(distToHero2)) / 2);
 	}
 
 	// Try to move to near enemies.

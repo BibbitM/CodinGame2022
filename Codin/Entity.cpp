@@ -40,3 +40,15 @@ void Entity::SetController(std::unique_ptr<Controller> controller)
 {
 	controllingBrain = std::move(controller);
 }
+
+Vector Entity::GetAwayDirection(const Entity& other) const
+{
+	if (GetPosition() != other.GetPosition())
+		return GetPosition() - other.GetPosition();
+
+	Vector awayDirection{
+		(id < other.id) ? -1 : 1,
+		(id % 2 < other.id % 2) ? -1 : 1,
+	};
+	return awayDirection;
+}

@@ -49,6 +49,8 @@ public:
 	void SetVelocity(const Vector& vel) { velocity = vel; }
 	void SetNearBase(bool isNear) { isNearBase = isNear; }
 
+	Vector GetAwayDirection(const Entity& other) const;
+
 private:
 	std::unique_ptr<Controller> controllingBrain{};
 
