@@ -46,7 +46,8 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 #endif
 
 	// Check if I have to cast spell
-	if (dangerFrameToAttackBase <= 2
+	if (danger.GetShieldLife() == 0
+		&& dangerFrameToAttackBase <= 2
 		&& heroFrameToCastWind == 0
 		&& dangerFrameToAttackBase <= heroFrameToAttackDanger + heroFrameToKill
 		&& game.GetMana() > Rules::spellManaCost)
