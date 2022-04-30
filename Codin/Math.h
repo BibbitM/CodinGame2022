@@ -9,5 +9,5 @@ constexpr inline int Pow2(int val)
 
 inline int Sqrt(int val)
 {
-	return static_cast<int>(std::lround(std::sqrt(static_cast<float>(val))));
+	return static_cast<int>(std::sqrt(static_cast<float>(val)));
 }
