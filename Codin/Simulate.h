@@ -4,6 +4,8 @@ class Entity;
 class Game;
 struct Vector;
 
+#include <vector>
+
 class Simulate
 {
 public:
@@ -15,5 +17,10 @@ public:
 	static int HeroFramesToCastSpell(const Entity& hero, const Entity& enemy, int spellRange);
 	static int FramesToKill(int healt);
 
-	static Vector GetBestAttackPosition(const Entity& hero, const Entity& enemy, const Vector& preferedPosition, const Game& game);
+	// Find the attack position damaging the most enemies at once or closest to the preferred position in attack and move range.
+	static Vector GetBestAttackPosition(const Entity& hero, const Entity& danger, const Vector& preferedPosition, const Game& game);
+	// Find the attack position closest to the preferred position in attack and move range.
+	static Vector GetPreferedAttackPosition(const Entity& hero, const Entity& danger, const Vector& preferedPosition);
+
+	static Vector GetEnemiesCenter(const std::vector<const Entity*>& enemies);
 };

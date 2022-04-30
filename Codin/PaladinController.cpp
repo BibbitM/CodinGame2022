@@ -37,7 +37,6 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 		<< " FA:" << heroFrameToAttackDanger
 		<< " FK:" << heroFrameToKill
 		<< " FC:" << heroFrameToCastWind
-		<< " Mana:" << game.GetMana()
 		<< std::endl;
 #endif
 

@@ -484,6 +484,8 @@ class Entity;
 class Game;
 struct Vector;
 
+#include <vector>
+
 class Simulate
 {
 public:
@@ -495,7 +497,12 @@ public:
 	static int HeroFramesToCastSpell(const Entity& hero, const Entity& enemy, int spellRange);
 	static int FramesToKill(int healt);
 
-	static Vector GetBestAttackPosition(const Entity& hero, const Entity& enemy, const Vector& preferedPosition, const Game& game);
+	// Find the attack position damaging the most enemies at once or closest to the preferred position in attack and move range.
+	static Vector GetBestAttackPosition(const Entity& hero, const Entity& danger, const Vector& preferedPosition, const Game& game);
+	// Find the attack position closest to the preferred position in attack and move range.
+	static Vector GetPreferedAttackPosition(const Entity& hero, const Entity& danger, const Vector& preferedPosition);
+
+	static Vector GetEnemiesCenter(const std::vector<const Entity*>& enemies);
 };
 #pragma endregion ..\Codin\Simulate.h
 // #include "StatsDescription.h"
@@ -727,7 +734,6 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 		<< " FA:" << heroFrameToAttackDanger
 		<< " FK:" << heroFrameToKill
 		<< " FC:" << heroFrameToCastWind
-		<< " Mana:" << game.GetMana()
 		<< std::endl;
 #endif
 
@@ -921,7 +927,12 @@ void PeasantController::Tick(const Game& game)
 // #include "Simulate.h"
 
 // #include "Entity.h"
+// #include "Game.h"
 // #include "Rules.h"
+
+#include <iostream>
+
+#define LOG_SIMULATE_BEST_ATTACK 1
 
 Vector Simulate::GetNearestBasePosition(const Entity& entity)
 {
@@ -1007,7 +1018,53 @@ int Simulate::FramesToKill(int healt)
 	return healt / Rules::heroDamage;
 }
 
-Vector Simulate::GetBestAttackPosition(const Entity& hero, const Entity& enemy, const Vector& preferedPosition, const Game& game)
+Vector Simulate::GetBestAttackPosition(const Entity& hero, const Entity& danger, const Vector& preferedPosition, const Game& game)
+{
+	std::vector<const Entity*> nearestEnemies;
+	nearestEnemies.reserve(16);
+
+	// Find the nearest enemies that hero can attack together with the enemy.
+	for (auto it : game.GetAllEntities())
+	{
+		const Entity* enemy = it.second.get();
+		if (enemy->GetType() != EntityType::Monster)
+			continue;
+		if (Distance2(danger.GetPosition(), enemy->GetPosition()) > Pow2(Rules::heroAttackRange * 2))
+			continue;
+
+		nearestEnemies.push_back(enemy);
+	}
+
+	while (nearestEnemies.size() > 1)
+	{
+		Vector nearestPosition = GetPreferedAttackPosition(hero, danger, GetEnemiesCenter(nearestEnemies));
+
+		bool canAttackAllNearest = true;
+		for (auto it = nearestEnemies.begin(); it != nearestEnemies.end(); /* in loop */)
+		{
+			if (Distance2(nearestPosition, (*it)->GetPosition()) <= Pow2(Rules::heroAttackRange))
+				++it;
+			else
+			{
+				it = nearestEnemies.erase(it);
+				canAttackAllNearest = false;
+			}
+		}
+
+		if (canAttackAllNearest)
+		{
+#if LOG_SIMULATE_BEST_ATTACK
+			std::cerr << " SBA:" << nearestEnemies.size() << std::endl;
+#endif
+			return nearestPosition;
+		}
+	}
+
+	// There is no possibility of attacking more enemies than one.
+	return GetPreferedAttackPosition(hero, danger, preferedPosition);
+}
+
+Vector Simulate::GetPreferedAttackPosition(const Entity& hero, const Entity& danger, const Vector& preferedPosition)
 {
 	Vector position = preferedPosition;
 
@@ -1015,14 +1072,22 @@ Vector Simulate::GetBestAttackPosition(const Entity& hero, const Entity& enemy, 
 	int step = 0;
 	while (step < maxSteps
 		&& (Distance2(position, hero.GetPosition()) > Pow2(Rules::heroMoveRange)
-			|| Distance2(position, enemy.GetPosition()) > Pow2(Rules::heroAttackRange)))
+			|| Distance2(position, danger.GetPosition()) > Pow2(Rules::heroAttackRange)))
 	{
 		position = hero.GetPosition() + (position - hero.GetPosition()).Limited(Rules::heroMoveRange);
-		position = enemy.GetPosition() + (position - enemy.GetPosition()).Limited(Rules::heroAttackRange);
+		position = danger.GetPosition() + (position - danger.GetPosition()).Limited(Rules::heroAttackRange);
 		++step;
 	}
 
 	return position;
+}
+
+Vector Simulate::GetEnemiesCenter(const std::vector<const Entity*>& enemies)
+{
+	Vector center{};
+	for (const Entity* e : enemies)
+		center += e->GetPosition();
+	return center / std::max(static_cast<int>(enemies.size()), 1);
 }
 #pragma endregion ..\Codin\Simulate.cpp
 #pragma region ..\Codin\StatsDescription.cpp
