@@ -809,7 +809,7 @@ void PaladinController::Tick(const Game& game)
 		});
 
 		const Entity* enemy = enemies.front();
-		const Vector attackPosition = Simulate::GetBestAttackPosition(owner, *enemy, enemy->GetTargetPosition(), game);
+		const Vector attackPosition = Simulate::GetBestAttackPosition(owner, *enemy, idlePosition/*enemy->GetTargetPosition()*/, game);
 		SetTarget(enemy->GetId(), attackPosition, "PC-enemy0");
 		return;
 	}
