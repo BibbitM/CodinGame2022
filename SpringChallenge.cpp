@@ -728,9 +728,9 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 #endif
 
 	// Check if I have to cast spell
-	if (dangerFrameToAttackBase < 2
+	if (dangerFrameToAttackBase <= 2
 		&& heroFrameToCastWind == 0
-		&& dangerFrameToAttackBase < heroFrameToAttackDanger + heroFrameToKill
+		&& dangerFrameToAttackBase <= heroFrameToAttackDanger + heroFrameToKill
 		&& game.GetMana() > Rules::spellManaCost)
 	{
 		SetSpell(Spell::Wind, danger.GetId(), game.GetEnemyBasePosition(), "PC-attackWind");
