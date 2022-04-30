@@ -732,9 +732,15 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 	if (dangerFrameToAttackBase < heroFrameToAttackDanger)
 		return false;
 
+	const bool heroNearBase = Distance2(owner.GetPosition(), game.GetBasePosition()) <= Pow2(Rules::monsterBaseAttackRange);
+	const bool dangerNearBase = Distance2(danger.GetTargetPosition(), game.GetBasePosition()) <= Pow2(Rules::monsterBaseAttackRange);
+
 	// Check if I have time to attack other enemies.
-	if (dangerFrameToAttackBase > heroFrameToAttackDanger + heroFrameToKill + framesCanIgnore)
+	if (!heroNearBase && !dangerNearBase
+		&& dangerFrameToAttackBase > heroFrameToAttackDanger + heroFrameToKill + framesCanIgnore)
+	{
 		return false;
+	}
 
 #if LOG_PALADIN_CONTROLLER
 	std::cerr
