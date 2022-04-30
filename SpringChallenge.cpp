@@ -833,7 +833,8 @@ void PaladinController::Tick(const Game& game)
 
 		for (const Entity* opponent : opponents)
 		{
-			if (opponent->GetShieldLife() == 0)
+			if (opponent->GetShieldLife() == 0 &&
+				!IsTargetedEntity(opponent->GetId(), game))
 			{
 				SetSpell(Spell::Control, opponent->GetId(), game.GetOpponentsBasePosition(), "PC-spellControl");
 				return;
