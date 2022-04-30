@@ -25,3 +25,8 @@ Vector Vector::Lengthed(int length) const
 
 	return { static_cast<int>(fx), static_cast<int>(fy) };
 }
+
+Vector Vector::Limited(int lenght) const
+{
+	return (Length2() <= Pow2(lenght)) ? *this : Lengthed(lenght);
+}

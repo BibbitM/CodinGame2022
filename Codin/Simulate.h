@@ -1,6 +1,7 @@
 #pragma once
 
 class Entity;
+class Game;
 struct Vector;
 
 class Simulate
@@ -13,4 +14,6 @@ public:
 	static int HeroFramesToAttackEnemy(const Entity& hero, const Entity& enemy);
 	static int HeroFramesToCastSpell(const Entity& hero, const Entity& enemy, int spellRange);
 	static int FramesToKill(int healt);
+
+	static Vector GetBestAttackPosition(const Entity& hero, const Entity& enemy, const Vector& preferedPosition, const Game& game);
 };

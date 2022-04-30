@@ -146,3 +146,23 @@ TEST(VectorTest, Lengthed)
 
 	EXPECT_EQ(Vector({ 1, 1 }).Lengthed(10), Vector({ 7, 7 }));
 }
+
+TEST(VectorTest, Limited)
+{
+	EXPECT_EQ(Vector({ 1, 0 }).Limited(1), Vector({ 1, 0 }));
+	EXPECT_EQ(Vector({ 0, -1 }).Limited(1), Vector({ 0, -1 }));
+	EXPECT_EQ(Vector({ 0, 0 }).Limited(100), Vector({ 0, 0 }));
+	EXPECT_EQ(Vector({ 0, 1 }).Limited(100), Vector({ 0, 1 }));
+	EXPECT_EQ(Vector({ -100, 0 }).Limited(100), Vector({ -100, 0 }));
+	EXPECT_EQ(Vector({ 100, 0 }).Limited(10), Vector({ 10, 0 }));
+	EXPECT_EQ(Vector({ 10, -10 }).Limited(0), Vector({ 0, 0 }));
+
+	EXPECT_EQ(Vector({ 10, 0 }).Limited(10), Vector({ 10, 0 }));
+	EXPECT_EQ(Vector({ 0, -5 }).Limited(2), Vector({ 0, -2 }));
+	EXPECT_EQ(Vector({ 3, 4 }).Limited(5), Vector({ 3, 4 }));
+	EXPECT_EQ(Vector({ 4, -3 }).Limited(10), Vector({ 4, -3 }));
+	EXPECT_EQ(Vector({ -8, 6 }).Limited(5), Vector({ -4, 3 }));
+
+	EXPECT_EQ(Vector({ 1, 1 }).Limited(10), Vector({ 1, 1 }));
+	EXPECT_EQ(Vector({ 100, 100 }).Limited(10), Vector({ 7, 7 }));
+}

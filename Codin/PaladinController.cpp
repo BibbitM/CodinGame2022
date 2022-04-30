@@ -52,7 +52,10 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 	}
 
 	// I've to attack.
-	SetTarget(danger.GetId(), Simulate::PositionAfterFrames(danger, heroFrameToAttackDanger), "PC-attack");
+	Vector attackPosition = heroFrameToAttackDanger > 0
+		? Simulate::PositionAfterFrames(danger, heroFrameToAttackDanger)
+		: Simulate::GetBestAttackPosition(owner, danger, game.GetBasePosition(), game);
+	SetTarget(danger.GetId(), attackPosition, "PC-attack");
 	return true;
 }
 

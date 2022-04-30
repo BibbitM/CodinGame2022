@@ -86,3 +86,21 @@ int Simulate::FramesToKill(int healt)
 {
 	return healt / Rules::heroDamage;
 }
+
+Vector Simulate::GetBestAttackPosition(const Entity& hero, const Entity& enemy, const Vector& preferedPosition, const Game& game)
+{
+	Vector position = preferedPosition;
+
+	constexpr int maxSteps = 10;
+	int step = 0;
+	while (step < maxSteps
+		&& (Distance2(position, hero.GetPosition()) > Pow2(Rules::heroMoveRange)
+			|| Distance2(position, enemy.GetPosition()) > Pow2(Rules::heroAttackRange)))
+	{
+		position = hero.GetPosition() + (position - hero.GetPosition()).Limited(Rules::heroMoveRange);
+		position = enemy.GetPosition() + (position - enemy.GetPosition()).Limited(Rules::heroAttackRange);
+		++step;
+	}
+
+	return position;
+}

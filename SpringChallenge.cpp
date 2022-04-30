@@ -46,6 +46,7 @@ struct Vector
 
 	constexpr int Length2() const { return Pow2(x) + Pow2(y); }
 	Vector Lengthed(int length) const;
+	Vector Limited(int lenght) const;
 };
 
 inline int Distance2(const Vector& a, const Vector& b)
@@ -480,6 +481,7 @@ struct Rules
 #pragma region ..\Codin\Simulate.h
 // #pragma once
 class Entity;
+class Game;
 struct Vector;
 
 class Simulate
@@ -492,6 +494,8 @@ public:
 	static int HeroFramesToAttackEnemy(const Entity& hero, const Entity& enemy);
 	static int HeroFramesToCastSpell(const Entity& hero, const Entity& enemy, int spellRange);
 	static int FramesToKill(int healt);
+
+	static Vector GetBestAttackPosition(const Entity& hero, const Entity& enemy, const Vector& preferedPosition, const Game& game);
 };
 #pragma endregion ..\Codin\Simulate.h
 // #include "StatsDescription.h"
@@ -738,7 +742,10 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 	}
 
 	// I've to attack.
-	SetTarget(danger.GetId(), Simulate::PositionAfterFrames(danger, heroFrameToAttackDanger), "PC-attack");
+	Vector attackPosition = heroFrameToAttackDanger > 0
+		? Simulate::PositionAfterFrames(danger, heroFrameToAttackDanger)
+		: Simulate::GetBestAttackPosition(owner, danger, game.GetBasePosition(), game);
+	SetTarget(danger.GetId(), attackPosition, "PC-attack");
 	return true;
 }
 
@@ -999,6 +1006,24 @@ int Simulate::FramesToKill(int healt)
 {
 	return healt / Rules::heroDamage;
 }
+
+Vector Simulate::GetBestAttackPosition(const Entity& hero, const Entity& enemy, const Vector& preferedPosition, const Game& game)
+{
+	Vector position = preferedPosition;
+
+	constexpr int maxSteps = 10;
+	int step = 0;
+	while (step < maxSteps
+		&& (Distance2(position, hero.GetPosition()) > Pow2(Rules::heroMoveRange)
+			|| Distance2(position, enemy.GetPosition()) > Pow2(Rules::heroAttackRange)))
+	{
+		position = hero.GetPosition() + (position - hero.GetPosition()).Limited(Rules::heroMoveRange);
+		position = enemy.GetPosition() + (position - enemy.GetPosition()).Limited(Rules::heroAttackRange);
+		++step;
+	}
+
+	return position;
+}
 #pragma endregion ..\Codin\Simulate.cpp
 #pragma region ..\Codin\StatsDescription.cpp
 // #include "StatsDescription.h"
@@ -1038,6 +1063,11 @@ Vector Vector::Lengthed(int length) const
 	float fy = static_cast<float>(y) / flen * static_cast<float>(length);
 
 	return { static_cast<int>(fx), static_cast<int>(fy) };
+}
+
+Vector Vector::Limited(int lenght) const
+{
+	return (Length2() <= Pow2(lenght)) ? *this : Lengthed(lenght);
 }
 #pragma endregion ..\Codin\Vector.cpp
 #pragma region Main.cpp
