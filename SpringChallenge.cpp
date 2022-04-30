@@ -274,7 +274,7 @@ void Controller::SetTarget(int entity, const Vector& pos, std::string_view info)
 	targetSpell = Spell::None;
 
 #if LOG_TARGET
-	std::cerr << "MH:" << owner.GetId() << " T:" << entity << ' ' << info << std::endl;
+	std::cerr << "H(" << owner.GetId() << ") Move -> T:" << entity << " P:" << pos << ' ' << info << std::endl;
 #else
 	TOUCH(info);
 #endif
@@ -287,7 +287,7 @@ void Controller::SetSpell(Spell spell, int entity, const Vector& pos, std::strin
 	targetSpell = spell;
 
 #if LOG_TARGET
-	std::cerr << "SH(" << spell << "):" << owner.GetId() << " T:" << entity << " P:" << pos << ' ' << info << std::endl;
+	std::cerr << "H(" << owner.GetId() << ") S(" << spell << ") ->" << " T:" << entity << " P:" << pos << ' ' << info << std::endl;
 #else
 	TOUCH(info);
 #endif
@@ -418,37 +418,6 @@ std::ostream& operator<<(std::ostream& out, const EntityDescription& entDesc)
 #pragma region ..\Codin\PaladinController.h
 // #pragma once
 // #include "Controller.h"
-
-class PaladinController : public Controller
-{
-public:
-	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
-
-	virtual bool Attack(const Game& game, const Entity& danger) override;
-	virtual void Tick(const Game& game) override;
-
-private:
-	Vector DerermineIdleMove(const Game& game) const;
-
-};
-
-#pragma endregion ..\Codin\PaladinController.h
-// #include "PeasantController.h"
-#pragma region ..\Codin\PeasantController.h
-// #pragma once
-// #include "Controller.h"
-
-class PeasantController : public Controller
-{
-public:
-	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
-
-	virtual bool Attack(const Game& game, const Entity& danger) override;
-	virtual void Tick(const Game& game) override;
-};
-#pragma endregion ..\Codin\PeasantController.h
-// #include "Entity.h"
-// #include "EntityDescription.h"
 // #include "Rules.h"
 #pragma region ..\Codin\Rules.h
 // #pragma once
@@ -477,6 +446,46 @@ struct Rules
 	static constexpr int spellControlRange = 2200;
 };
 #pragma endregion ..\Codin\Rules.h
+
+class PaladinController : public Controller
+{
+public:
+	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
+
+	virtual bool Attack(const Game& game, const Entity& danger) override;
+	virtual void Tick(const Game& game) override;
+
+private:
+	Vector DerermineIdleMove(const Game& game) const;
+
+	bool wantsMoveCloserToBase = false;
+
+	static constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 4; // 1 / 2;
+	static constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 2 / 2; // 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
+	static constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
+	static constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
+	static constexpr int sensDistToEnemy = Rules::heroViewRange * 3 / 2;
+	static constexpr int optDistToEnemy = Rules::heroAttackRange * 1 / 2;
+};
+
+#pragma endregion ..\Codin\PaladinController.h
+// #include "PeasantController.h"
+#pragma region ..\Codin\PeasantController.h
+// #pragma once
+// #include "Controller.h"
+
+class PeasantController : public Controller
+{
+public:
+	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
+
+	virtual bool Attack(const Game& game, const Entity& danger) override;
+	virtual void Tick(const Game& game) override;
+};
+#pragma endregion ..\Codin\PeasantController.h
+// #include "Entity.h"
+// #include "EntityDescription.h"
+// #include "Rules.h"
 // #include "Simulate.h"
 #pragma region ..\Codin\Simulate.h
 // #pragma once
@@ -661,7 +670,6 @@ std::vector<Entity*> Game::GetHeroes()
 // #include "Entity.h"
 // #include "Game.h"
 // #include "Math.h"
-// #include "Rules.h"
 // #include "Simulate.h"
 // #include "Timer.h"
 #pragma region ..\Codin\Timer.h
@@ -759,23 +767,48 @@ void PaladinController::Tick(const Game& game)
 {
 	FUNCTION_TIMER();
 
+	if (wantsMoveCloserToBase && Distance2(owner.GetPosition(), game.GetBasePosition()) <= Pow2(minDistToBase))
+		wantsMoveCloserToBase = false;
+	else if (!wantsMoveCloserToBase && Distance2(owner.GetPosition(), game.GetBasePosition()) >= Pow2(maxDistToBase))
+		wantsMoveCloserToBase = true;
+
+	// We have already attacked dangerous enemy. No other move is needed.
 	if (HasTarget())
 		return;
 
-	SetTarget(-1, DerermineIdleMove(game), "PC-idle");
 
-	// TODO: Move to a function
-	std::vector<Entity*> enemies;
+	const Vector idlePosition = DerermineIdleMove(game);
+
+
+	std::vector<const Entity*> enemies;
 	enemies.reserve(game.GetAllEntities().size());
 
-	// Get only enemies.
+	// Get enemies in one move range that will score extra mana.
 	for (const auto& ent : game.GetAllEntities())
 	{
-		const auto& enemy = ent.second;
-		if (enemy->GetThreatFor() == ThreatFor::MyBase)
-			enemies.push_back(enemy.get());
+		const Entity* enemy = ent.second.get();
+		if (enemy->GetType() == EntityType::Monster
+			&& Distance2(enemy->GetPosition(), game.GetBasePosition()) > Pow2(Rules::baseViewRange)
+			&& Simulate::HeroFramesToAttackEnemy(owner, *enemy) == 0)
+		{
+			enemies.push_back(enemy);
+		}
 	}
 
+	if (!enemies.empty())
+	{
+		std::sort(enemies.begin(), enemies.end(), [this](const Entity* a, const Entity* b)
+		{
+			return Distance2(a->GetPosition(), owner.GetPosition()) < Distance2(b->GetPosition(), owner.GetPosition());
+		});
+
+		const Entity* enemy = enemies.front();
+		const Vector attackPosition = Simulate::GetBestAttackPosition(owner, *enemy, enemy->GetTargetPosition(), game);
+		SetTarget(enemy->GetId(), attackPosition, "PC-enemy0");
+		return;
+	}
+
+	/*
 	// Find the nearest enemy and move to him.
 	if (!enemies.empty())
 	{
@@ -787,32 +820,29 @@ void PaladinController::Tick(const Game& game)
 
 		// Move to nearest enemy.
 		if (Distance2(enemies.front()->GetPosition(), owner.GetPosition()) < Rules::heroViewRange)
+		{
 			SetTarget(enemies.front()->GetId(), enemies.front()->GetPosition(), "PC-nearest");
+			return;
+		}
 	}
+	//**/
+
+	// No enemies to attack, 
+	SetTarget(-1, idlePosition, "PC-idle");
 }
 
 Vector PaladinController::DerermineIdleMove(const Game& game) const
 {
 	FUNCTION_TIMER();
 
-	constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 4; // 1 / 2;
-	constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 3; // 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
-	constexpr int optDistToBase = (minDistToBase + maxDistToBase) / 2;
-	constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
-	constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
-	constexpr int sensDistToEnemy = Rules::heroViewRange * 2 / 3;
-	constexpr int optDistToEnemy = Rules::heroAttackRange * 1 / 2;
-	constexpr int sensDistToThreat = Rules::heroViewRange;
-	constexpr int optDistToThreat = Rules::heroAttackRange * 1 / 2;
-
 	Vector idlePosition = owner.GetPosition();
 
 	// Set minimal distance to the base.
 	const int distToBase2 = Distance2(owner.GetPosition(), game.GetBasePosition());
-	if (distToBase2 < Pow2(minDistToBase))
-		idlePosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(optDistToBase - Sqrt(distToBase2));
-	else if (distToBase2 > Pow2(maxDistToBase))
-		idlePosition += (game.GetBasePosition() - owner.GetPosition()).Lengthed(Sqrt(distToBase2) - optDistToBase);
+	if (wantsMoveCloserToBase && distToBase2 > Pow2(minDistToBase))
+		idlePosition += (game.GetBasePosition() - owner.GetPosition()).Lengthed(std::max(Sqrt(distToBase2) - minDistToBase, Rules::heroMoveRange));
+	else if (!wantsMoveCloserToBase && distToBase2 < Pow2(maxDistToBase))
+		idlePosition += (owner.GetPosition() - game.GetBasePosition()).Lengthed(std::max(maxDistToBase - Sqrt(distToBase2), Rules::heroMoveRange));
 
 	// Set minimal distance to the map edges.
 	if (owner.GetPosition().x < minDistToEdge)
@@ -838,9 +868,7 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 	// Try to move to near enemies.
 	for (const auto& ent : game.GetAllEntities())
 	{
-		const auto& enemy = ent.second;
-		if (enemy.get() == &owner)
-			continue;
+		const Entity* enemy = ent.second.get();
 		if (enemy->GetType() != EntityType::Monster)
 			continue;
 
@@ -849,28 +877,6 @@ Vector PaladinController::DerermineIdleMove(const Game& game) const
 			idlePosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToEnemy2) - optDistToEnemy);
 	}
 
-	bool hasAnyThreat = false;
-
-	// Try to move to near threats.
-	for (const auto& ent : game.GetAllEntities())
-	{
-		const auto& enemy = ent.second;
-		if (enemy.get() == &owner)
-			continue;
-		if (enemy->GetThreatFor() != ThreatFor::MyBase)
-			continue;
-
-		const int distToThreat2 = Distance2(enemy->GetPosition(), owner.GetPosition());
-		if (distToThreat2 < Pow2(sensDistToThreat) && distToThreat2 > Pow2(optDistToThreat))
-		{
-			if (!hasAnyThreat)
-			{
-				idlePosition = owner.GetPosition();
-				hasAnyThreat = true;
-			}
-			idlePosition += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToThreat2) - optDistToThreat);
-		}
-	}
 	return idlePosition;
 }
 #pragma endregion ..\Codin\PaladinController.cpp

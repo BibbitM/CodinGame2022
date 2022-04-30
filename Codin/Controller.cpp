@@ -40,7 +40,7 @@ void Controller::SetTarget(int entity, const Vector& pos, std::string_view info)
 	targetSpell = Spell::None;
 
 #if LOG_TARGET
-	std::cerr << "MH:" << owner.GetId() << " T:" << entity << ' ' << info << std::endl;
+	std::cerr << "H(" << owner.GetId() << ") Move -> T:" << entity << " P:" << pos << ' ' << info << std::endl;
 #else
 	TOUCH(info);
 #endif
@@ -53,7 +53,7 @@ void Controller::SetSpell(Spell spell, int entity, const Vector& pos, std::strin
 	targetSpell = spell;
 
 #if LOG_TARGET
-	std::cerr << "SH(" << spell << "):" << owner.GetId() << " T:" << entity << " P:" << pos << ' ' << info << std::endl;
+	std::cerr << "H(" << owner.GetId() << ") S(" << spell << ") ->" << " T:" << entity << " P:" << pos << ' ' << info << std::endl;
 #else
 	TOUCH(info);
 #endif
