@@ -204,7 +204,7 @@ public:
 	const std::unordered_map<int, std::shared_ptr<Entity>>& GetAllEntities() const { return allEntities; }
 	const std::vector<std::shared_ptr<Entity>>& GetMyHeroes() const { return myHeroes; }
 	const Vector& GetBasePosition() const { return basePosition; }
-	Vector GetEnemyBasePosition() const;
+	Vector GetOpponentsBasePosition() const;
 
 private:
 	void PossesEntity(Entity* hero);
@@ -618,7 +618,7 @@ void Game::MakeMove(std::ostream& out) const
 		hero->GetController()->MakeMove(out);
 }
 
-Vector Game::GetEnemyBasePosition() const
+Vector Game::GetOpponentsBasePosition() const
 {
 	return basePosition == Vector{} ? Rules::mapSize : Vector{};
 }
@@ -770,7 +770,7 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 		&& dangerFrameToAttackBase <= heroFrameToAttackDanger + heroFrameToKill
 		&& game.GetMana() > Rules::spellManaCost)
 	{
-		SetSpell(Spell::Wind, danger.GetId(), game.GetEnemyBasePosition(), "PC-attackWind");
+		SetSpell(Spell::Wind, danger.GetId(), game.GetOpponentsBasePosition(), "PC-attackWind");
 		return true;
 	}
 
@@ -798,6 +798,48 @@ void PaladinController::Tick(const Game& game)
 
 	const Vector idlePosition = DerermineIdleMove(game);
 
+	std::vector<const Entity*> opponents;
+	opponents.reserve(3);
+
+	bool tryToCastShield = false;
+
+	// Get opponents in spell range.
+	for (const auto& ent : game.GetAllEntities())
+	{
+		const Entity* enemy = ent.second.get();
+		if (enemy->GetType() != EntityType::OpponentsHero)
+			continue;
+
+		const int opponentDist2 = Distance2(enemy->GetPosition(), owner.GetPosition());
+		if (opponentDist2 <= Pow2(Rules::spellControlRange * 2))
+			tryToCastShield = true;
+		
+		if (opponentDist2 <= Pow2(Rules::spellControlRange))
+			opponents.push_back(enemy);
+	}
+
+	if (tryToCastShield && owner.GetShieldLife() == 0 && game.GetMana() >= Rules::spellManaCost * 3)
+	{
+		SetSpell(Spell::Shield, owner.GetId(), owner.GetPosition(), "PC-spellShield");
+		return;
+	}
+
+	if (!opponents.empty() && game.GetMana() >= Rules::spellManaCost * 3)
+	{
+		std::sort(opponents.begin(), opponents.end(), [this](const Entity* a, const Entity* b)
+		{
+			return Distance2(a->GetPosition(), owner.GetPosition()) < Distance2(b->GetPosition(), owner.GetPosition());
+		});
+
+		for (const Entity* opponent : opponents)
+		{
+			if (opponent->GetShieldLife() == 0)
+			{
+				SetSpell(Spell::Control, opponent->GetId(), game.GetOpponentsBasePosition(), "PC-spellControl");
+				return;
+			}
+		}
+	}
 
 	std::vector<const Entity*> enemies;
 	enemies.reserve(game.GetAllEntities().size());

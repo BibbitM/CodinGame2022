@@ -29,7 +29,7 @@ public:
 	const std::unordered_map<int, std::shared_ptr<Entity>>& GetAllEntities() const { return allEntities; }
 	const std::vector<std::shared_ptr<Entity>>& GetMyHeroes() const { return myHeroes; }
 	const Vector& GetBasePosition() const { return basePosition; }
-	Vector GetEnemyBasePosition() const;
+	Vector GetOpponentsBasePosition() const;
 
 private:
 	void PossesEntity(Entity* hero);

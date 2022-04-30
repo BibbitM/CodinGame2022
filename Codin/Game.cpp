@@ -98,7 +98,7 @@ void Game::MakeMove(std::ostream& out) const
 		hero->GetController()->MakeMove(out);
 }
 
-Vector Game::GetEnemyBasePosition() const
+Vector Game::GetOpponentsBasePosition() const
 {
 	return basePosition == Vector{} ? Rules::mapSize : Vector{};
 }
