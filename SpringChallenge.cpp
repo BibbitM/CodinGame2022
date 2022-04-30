@@ -585,13 +585,25 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			return Distance2(a->GetPosition(), danger->GetPosition()) < Distance2(b->GetPosition(), danger->GetPosition());
 		});
 
-		for (auto it = heroes.begin(); it != heroes.end(); ++it)
+		for (auto it = heroes.begin(); it != heroes.end(); /* in loop */)
 		{
 			if ((*it)->GetController()->Attack(*this, *danger))
 			{
-				heroes.erase(it);
-				break;
+				const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(*danger);
+				const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(*(*it), *danger);
+				const int heroFrameToKill = Simulate::FramesToKill(danger->GetHealt());
+
+				it = heroes.erase(it);
+
+				// If one hero can deal with it attack next danger.
+				if (danger->GetShieldLife() == 0
+					|| heroFrameToKill + heroFrameToAttackDanger <= dangerFrameToAttackBase)
+				{
+					break;
+				}
 			}
+			else
+				++it;
 		}
 	}
 
