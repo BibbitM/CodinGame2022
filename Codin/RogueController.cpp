@@ -63,42 +63,63 @@ void RogueController::Tick(const Game& game)
 bool RogueController::TryCastSpells(const Game& game)
 {
 	// Check if we have enough mana.
-	if (game.GetMana() < Rules::spellManaCost * 2)
-		return false;
-
-	// Check if there are enemies in wind range.
-	int closerToOpponentsBase = 0;
-	int furtherToOpponentsBase = 0;
-
-	const int ownerDistToOpponentsBase2 = Distance2(owner.GetPosition(), game.GetOpponentsBasePosition());
-	if (ownerDistToOpponentsBase2 >= Pow2(maxDistToBase))
-		return false;
-
-	// Get enemies in one move range that will score extra mana.
-	for (const auto& ent : game.GetAllEntities())
+	if (game.GetMana() >= Rules::spellManaCost * 5)
 	{
-		const Entity* enemy = ent.second.get();
-		const int enemyDistToOpponentsBase2 = Distance2(enemy->GetPosition(), game.GetOpponentsBasePosition());
-		if (enemy->GetType() == EntityType::Monster
-			&& Distance2(enemy->GetPosition(), owner.GetPosition()) <= Pow2(Rules::spellWindRange)
-			&& (enemy->GetThreatFor() == ThreatFor::OpponentsBase
-				|| enemyDistToOpponentsBase2 < Pow2(Rules::monsterBaseAttackRange + Rules::spellWindPushRange)
-				)
-			)
+		// Check if there are enemies in wind range.
+		int closerToOpponentsBase = 0;
+		int furtherToOpponentsBase = 0;
+
+		const int ownerDistToOpponentsBase2 = Distance2(owner.GetPosition(), game.GetOpponentsBasePosition());
+		if (ownerDistToOpponentsBase2 >= Pow2(maxDistToBase))
+			return false;
+
+		// Get enemies in one move range that will score extra mana.
+		for (const auto& ent : game.GetAllEntities())
 		{
-			if (enemyDistToOpponentsBase2 < ownerDistToOpponentsBase2)
-				++closerToOpponentsBase;
-			else
-				++furtherToOpponentsBase;
+			const Entity* enemy = ent.second.get();
+			const int enemyDistToOpponentsBase2 = Distance2(enemy->GetPosition(), game.GetOpponentsBasePosition());
+			if (enemy->GetType() == EntityType::Monster
+				&& Distance2(enemy->GetPosition(), owner.GetPosition()) <= Pow2(Rules::spellWindRange)
+				&& (enemy->GetThreatFor() == ThreatFor::OpponentsBase
+					|| enemyDistToOpponentsBase2 < Pow2(Rules::monsterBaseAttackRange + Rules::spellWindPushRange)
+					)
+				)
+			{
+				if (enemyDistToOpponentsBase2 < ownerDistToOpponentsBase2)
+					++closerToOpponentsBase;
+				else
+					++furtherToOpponentsBase;
+			}
+		}
+
+		if (ownerDistToOpponentsBase2 < Pow2(optDistToBase + Rules::spellWindRange)
+			&& (closerToOpponentsBase > 0 || furtherToOpponentsBase > 0))
+		{
+			SetSpell(Spell::Wind, -1, GetWindDirection(game), "RC-spellWind");
+			moveToOpponentsBaseForFrames = 3;
+			return true;
 		}
 	}
 
-	if (ownerDistToOpponentsBase2 < Pow2(optDistToBase + Rules::spellWindRange)
-		&& (closerToOpponentsBase > 0 || furtherToOpponentsBase > 0))
+	// Check if we have enough mana.a
+	if (game.GetMana() >= Rules::spellManaCost * 10)
 	{
-		SetSpell(Spell::Wind, -1, GetWindDirection(game), "RC-spellWind");
-		moveToOpponentsBaseForFrames = 3;
-		return true;
+		// Cast Shield on an opponent in the base to prevent pushing them inside the base.
+		for (const auto& opp : game.GetAllEntities())
+		{
+			const Entity* opponent = opp.second.get();
+			if (opponent->GetType() != EntityType::OpponentsHero)
+				continue;
+			if (opponent->GetShieldLife() > 0)
+				continue;
+			if (Distance2(opponent->GetPosition(), owner.GetPosition()) >= Pow2(Rules::spellShieldRange))
+				continue;
+			if (Distance2(opponent->GetPosition(), game.GetOpponentsBasePosition()) >= Pow2(Rules::monsterBaseAttackRange))
+				continue;
+
+			SetSpell(Spell::Shield, opponent->GetId(), opponent->GetPosition(), "RC-spellShieldOpponent");
+			return true;
+		}
 	}
 
 	return false;
