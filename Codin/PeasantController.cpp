@@ -16,6 +16,14 @@ bool PeasantController::Attack(const Game& game, const Entity& danger, bool shou
 	return true;
 }
 
+bool PeasantController::Defend(const Game& game, const Entity& opponent, bool shouldDefend)
+{
+	UNUSED(game);
+	UNUSED(opponent);
+	UNUSED(shouldDefend);
+	return false;
+}
+
 void PeasantController::Tick(const Game& game)
 {
 	if (HasTarget())

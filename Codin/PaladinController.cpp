@@ -84,6 +84,34 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 	return true;
 }
 
+bool PaladinController::Defend(const Game& game, const Entity& opponent, bool shouldDefend)
+{
+	if (opponent.GetShieldLife() > 1)
+		return false;
+	if (game.GetMana() < Rules::spellManaCost * 5)
+		return false;
+	if (!shouldDefend)
+		return false;
+
+	const int heroFrameToCastWind = Simulate::HeroFramesToCastSpell(owner, opponent, Rules::spellWindRange);
+	const int heroFrameToCastControl = Simulate::HeroFramesToCastSpell(owner, opponent, Rules::spellControlRange);
+
+	if ((heroFrameToCastControl && heroFrameToCastWind)
+		|| opponent.GetShieldLife() > 0)
+	{
+		// I've to move closer to the opponent.
+		Vector attackPosition = Simulate::GetBestAttackPosition(owner, opponent, game.GetOpponentsBasePosition(), game);
+		SetTarget(opponent.GetId(), attackPosition, "PC-defend");
+		return true;
+	}
+
+	if (heroFrameToCastWind == 0)
+		SetSpell(Spell::Wind, opponent.GetId(), game.GetOpponentsBasePosition(), "PC-defendWind");
+	else
+		SetSpell(Spell::Control, opponent.GetId(), game.GetOpponentsBasePosition(), "PC-defendControl");
+	return true;
+}
+
 void PaladinController::Tick(const Game& game)
 {
 	FUNCTION_TIMER();

@@ -32,10 +32,13 @@ public:
 	Vector GetOpponentsBasePosition() const;
 
 private:
+	void TickAttackAndDefend();
+
 	void PossesEntity(Entity* hero);
 	bool ShouldAttack(const std::vector<Entity*> heroes) const;
 
 	std::vector<const Entity*> GetDangerousEnemies() const;
+	std::vector<const Entity*> GetDangerousOpponents() const;
 	std::vector<Entity*> GetHeroes();
 
 	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;

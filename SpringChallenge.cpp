@@ -82,7 +82,8 @@ public:
 	virtual ~Controller() { }
 
 	void Clear();
-	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) = 0;;
+	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) = 0;
+	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) = 0;
 	virtual void Tick(const Game& game) = 0;
 	void MakeMove(std::ostream& out) const;
 
@@ -207,10 +208,13 @@ public:
 	Vector GetOpponentsBasePosition() const;
 
 private:
+	void TickAttackAndDefend();
+
 	void PossesEntity(Entity* hero);
 	bool ShouldAttack(const std::vector<Entity*> heroes) const;
 
 	std::vector<const Entity*> GetDangerousEnemies() const;
+	std::vector<const Entity*> GetDangerousOpponents() const;
 	std::vector<Entity*> GetHeroes();
 
 	std::unordered_map<int, std::shared_ptr<Entity>> allEntities;
@@ -456,6 +460,7 @@ public:
 	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
 
 	virtual bool Attack(const Game& game, const Entity& danger, bool shouldAttack) override;
+	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
 	virtual void Tick(const Game& game) override;
 
 private:
@@ -486,6 +491,7 @@ public:
 	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
 
 	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) override;
+	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
 	virtual void Tick(const Game& game) override;
 };
 #pragma endregion ..\Codin\PeasantController.h
@@ -581,9 +587,21 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	for (const auto& hero : myHeroes)
 		hero->GetController()->Clear();
 
-	// First take care of dangerous enemies
+	// First take care of dangerous enemies and opponents.
+	TickAttackAndDefend();
+
+	// Tick all heroes.
+	for (const auto& hero : myHeroes)
+		hero->GetController()->Tick(*this);
+}
+
+void Game::TickAttackAndDefend()
+{
 	std::vector<const Entity*> dangerousEnemies = GetDangerousEnemies();
+	std::vector<const Entity*> dangerousOpponents = GetDangerousOpponents();
 	std::vector<Entity*> heroes = GetHeroes();
+
+	// Attack
 	for (const Entity* danger : dangerousEnemies)
 	{
 		if (heroes.empty())
@@ -617,9 +635,30 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 		}
 	}
 
-	// Tick all heroes.
-	for (const auto& hero : myHeroes)
-		hero->GetController()->Tick(*this);
+	// Defend
+	bool anyOpponentDefneded = false;
+	for (const Entity* opponent : dangerousOpponents)
+	{
+		if (heroes.empty())
+			break;
+
+		std::sort(heroes.begin(), heroes.end(), [opponent](const Entity* a, const Entity* b)
+		{
+			return Distance2(a->GetPosition(), opponent->GetPosition()) < Distance2(b->GetPosition(), opponent->GetPosition());
+		});
+
+		for (auto it = heroes.begin(); it != heroes.end(); /* in loop */)
+		{
+			if ((*it)->GetController()->Defend(*this, *opponent, !anyOpponentDefneded))
+			{
+				anyOpponentDefneded = true;
+				it = heroes.erase(it);
+				break;
+			}
+			else
+				++it;
+		}
+	}
 }
 
 bool Game::ShouldAttack(const std::vector<Entity*> heroes) const
@@ -686,6 +725,34 @@ std::vector<const Entity*> Game::GetDangerousEnemies() const
 	});
 
 	return dangerousEnemies;
+}
+
+std::vector<const Entity*> Game::GetDangerousOpponents() const
+{
+	std::vector<const Entity*> dangerousOpponents;
+	dangerousOpponents.reserve(3);
+
+	// Get only enemies.
+	for (const auto& ent : GetAllEntities())
+	{
+		const auto& opponent = ent.second;
+		if (opponent->GetType() != EntityType::OpponentsHero)
+			continue;
+		if (Distance2(opponent->GetPosition(), GetBasePosition()) > Pow2(Rules::baseViewRange))
+			continue;
+
+		dangerousOpponents.push_back(opponent.get());
+	}
+
+	// Sort opponents by distance to the base.
+	std::sort(dangerousOpponents.begin(), dangerousOpponents.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	return dangerousOpponents;
 }
 
 std::vector<Entity*> Game::GetHeroes()
@@ -822,6 +889,34 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 		? Simulate::PositionAfterFrames(danger, heroFrameToAttackDanger)
 		: Simulate::GetBestAttackPosition(owner, danger, game.GetBasePosition(), game);
 	SetTarget(danger.GetId(), attackPosition, "PC-attack");
+	return true;
+}
+
+bool PaladinController::Defend(const Game& game, const Entity& opponent, bool shouldDefend)
+{
+	if (opponent.GetShieldLife() > 1)
+		return false;
+	if (game.GetMana() < Rules::spellManaCost * 5)
+		return false;
+	if (!shouldDefend)
+		return false;
+
+	const int heroFrameToCastWind = Simulate::HeroFramesToCastSpell(owner, opponent, Rules::spellWindRange);
+	const int heroFrameToCastControl = Simulate::HeroFramesToCastSpell(owner, opponent, Rules::spellControlRange);
+
+	if ((heroFrameToCastControl && heroFrameToCastWind)
+		|| opponent.GetShieldLife() > 0)
+	{
+		// I've to move closer to the opponent.
+		Vector attackPosition = Simulate::GetBestAttackPosition(owner, opponent, game.GetOpponentsBasePosition(), game);
+		SetTarget(opponent.GetId(), attackPosition, "PC-defend");
+		return true;
+	}
+
+	if (heroFrameToCastWind == 0)
+		SetSpell(Spell::Wind, opponent.GetId(), game.GetOpponentsBasePosition(), "PC-defendWind");
+	else
+		SetSpell(Spell::Control, opponent.GetId(), game.GetOpponentsBasePosition(), "PC-defendControl");
 	return true;
 }
 
@@ -1028,6 +1123,14 @@ bool PeasantController::Attack(const Game& game, const Entity& danger, bool shou
 		return false;
 	SetTarget(danger.GetId(), danger.GetTargetPosition(), "PE-attackDanger");
 	return true;
+}
+
+bool PeasantController::Defend(const Game& game, const Entity& opponent, bool shouldDefend)
+{
+	UNUSED(game);
+	UNUSED(opponent);
+	UNUSED(shouldDefend);
+	return false;
 }
 
 void PeasantController::Tick(const Game& game)
