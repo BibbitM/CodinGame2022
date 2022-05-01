@@ -944,9 +944,28 @@ bool PaladinController::Defend(const Game& game, const Entity& opponent, bool sh
 {
 	if (opponent.GetShieldLife() > 1)
 		return false;
-	if (game.GetMana() < Rules::spellManaCost * 5)
-		return false;
 	if (!shouldDefend)
+		return false;
+
+	int minimalMana = Rules::spellManaCost * 5;
+	const int opponentDistToBase2 = Distance2(opponent.GetPosition(), game.GetBasePosition());
+	if (opponentDistToBase2 < Pow2(Rules::monsterBaseAttackRange))
+	{
+		for (const auto& ent : game.GetAllEntities())
+		{
+			const Entity* monster = ent.second.get();
+			if (monster->GetType() != EntityType::Monster)
+				continue;
+
+			const int monsterDistToBase2 = Distance2(monster->GetPosition(), game.GetBasePosition());
+			if (monsterDistToBase2 < opponentDistToBase2)
+			{
+				minimalMana = Rules::spellManaCost * 3;
+				break;
+			}
+		}
+	}
+	if (game.GetMana() < minimalMana)
 		return false;
 
 	const int heroFrameToCastWind = Simulate::HeroFramesToCastSpell(owner, opponent, Rules::spellWindRange);
