@@ -101,7 +101,7 @@ bool PaladinController::Defend(const Game& game, const Entity& opponent, bool sh
 	if (!shouldDefend)
 		return false;
 
-	int minimalMana = Rules::spellManaCost * 15;
+	int minimalMana = Rules::spellManaCost * 5;
 	const int opponentDistToBase2 = Distance2(opponent.GetPosition(), game.GetBasePosition());
 	if (opponentDistToBase2 < Pow2(Rules::monsterBaseAttackRange))
 	{
@@ -114,7 +114,7 @@ bool PaladinController::Defend(const Game& game, const Entity& opponent, bool sh
 			const int monsterDistToBase2 = Distance2(monster->GetPosition(), game.GetBasePosition());
 			if (monsterDistToBase2 < opponentDistToBase2)
 			{
-				minimalMana = Rules::spellManaCost * 10;
+				minimalMana = Rules::spellManaCost * 3;
 				break;
 			}
 		}
@@ -123,9 +123,8 @@ bool PaladinController::Defend(const Game& game, const Entity& opponent, bool sh
 		return false;
 
 	const int heroFrameToCastWind = Simulate::HeroFramesToCastSpell(owner, opponent, Rules::spellWindRange);
-	const int heroFrameToCastControl = Simulate::HeroFramesToCastSpell(owner, opponent, Rules::spellControlRange);
 
-	if ((heroFrameToCastControl && heroFrameToCastWind)
+	if (heroFrameToCastWind
 		|| opponent.GetShieldLife() > 0)
 	{
 		// I've to move closer to the opponent.
@@ -134,10 +133,7 @@ bool PaladinController::Defend(const Game& game, const Entity& opponent, bool sh
 		return true;
 	}
 
-	if (heroFrameToCastWind == 0)
-		SetSpell(Spell::Wind, opponent.GetId(), game.GetOpponentsBasePosition(), "PC-defendWind");
-	else
-		SetSpell(Spell::Control, opponent.GetId(), game.GetOpponentsBasePosition(), "PC-defendControl");
+	SetSpell(Spell::Wind, opponent.GetId(), game.GetOpponentsBasePosition(), "PC-defendWind");
 	return true;
 }
 
