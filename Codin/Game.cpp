@@ -201,13 +201,28 @@ std::vector<const Entity*> Game::GetDangerousOpponents() const
 	dangerousOpponents.reserve(3);
 
 	// Get only enemies.
-	for (const auto& ent : GetAllEntities())
+	for (const auto& opp : GetAllEntities())
 	{
-		const auto& opponent = ent.second;
+		const auto& opponent = opp.second;
 		if (opponent->GetType() != EntityType::OpponentsHero)
 			continue;
 		if (Distance2(opponent->GetPosition(), GetBasePosition()) > Pow2(Rules::baseViewRange))
 			continue;
+
+		bool isAnyMonsterNearTheOpponent = false;
+		for (const auto& mon : GetAllEntities())
+		{
+			const auto& monster = mon.second;
+			if (monster->GetType() != EntityType::Monster)
+				continue;
+			if (Distance2(opponent->GetPosition(), monster->GetPosition()) > Pow2(Rules::spellControlRange + Rules::heroMoveRange + Rules::monsterMoveRange))
+				continue;
+
+			isAnyMonsterNearTheOpponent = true;
+			break;
+		}
+		if (!isAnyMonsterNearTheOpponent)
+			break;
 
 		dangerousOpponents.push_back(opponent.get());
 	}
