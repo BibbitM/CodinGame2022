@@ -166,3 +166,14 @@ TEST(VectorTest, Limited)
 	EXPECT_EQ(Vector({ 1, 1 }).Limited(10), Vector({ 1, 1 }));
 	EXPECT_EQ(Vector({ 100, 100 }).Limited(10), Vector({ 7, 7 }));
 }
+
+TEST(VectorTest, Perpendicular)
+{
+	EXPECT_EQ(Vector({ 0, 0 }).Perpendicular(), Vector({ 0, 0 }));
+	EXPECT_EQ(Vector({ 1, 0 }).Perpendicular(), Vector({ 0, 1 }));
+	EXPECT_EQ(Vector({ 0, 1 }).Perpendicular(), Vector({ -1, 0 }));
+	EXPECT_EQ(Vector({ -1, 0 }).Perpendicular(), Vector({ 0, -1 }));
+	EXPECT_EQ(Vector({ 0, -1 }).Perpendicular(), Vector({ 1, 0 }));
+
+	EXPECT_EQ(Vector({ 3, 4 }).Perpendicular(), Vector({ -4, 3 }));
+}

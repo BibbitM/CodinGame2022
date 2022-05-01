@@ -30,3 +30,8 @@ Vector Vector::Limited(int lenght) const
 {
 	return (Length2() <= Pow2(lenght)) ? *this : Lengthed(lenght);
 }
+
+Vector Vector::Perpendicular() const
+{
+	return { -y, x };
+}

@@ -47,6 +47,7 @@ struct Vector
 	constexpr int Length2() const { return Pow2(x) + Pow2(y); }
 	Vector Lengthed(int length) const;
 	Vector Limited(int lenght) const;
+	Vector Perpendicular() const;
 };
 
 inline int Distance2(const Vector& a, const Vector& b)
@@ -1132,9 +1133,9 @@ Vector PaladinController::GetIdleTarget(const Game& game) const
 
 	// Set minimal distance to the base.
 	const int distToBase2 = Distance2(owner.GetPosition(), game.GetBasePosition());
-	if (wantsMoveCloserToBase && distToBase2 > Pow2(minDistToBase))
+	if (wantsMoveCloserToBase && distToBase2 >= Pow2(minDistToBase))
 		idleTarget += (game.GetBasePosition() - owner.GetPosition()).Lengthed(std::max(Sqrt(distToBase2) - minDistToBase, Rules::heroMoveRange));
-	else if (!wantsMoveCloserToBase && distToBase2 < Pow2(maxDistToBase))
+	else if (!wantsMoveCloserToBase && distToBase2 <= Pow2(maxDistToBase))
 		idleTarget += (owner.GetPosition() - game.GetBasePosition()).Lengthed(std::max(maxDistToBase - Sqrt(distToBase2), Rules::heroMoveRange));
 
 	// Set minimal distance to the map edges.
@@ -1391,9 +1392,9 @@ Vector RogueController::GetIdleTarget(const Game& game) const
 
 	// Set minimal distance to the opponents base.
 	const int distToOpponentsBase2 = Distance2(owner.GetPosition(), game.GetOpponentsBasePosition());
-	if (wantsMoveCloserToBase && distToOpponentsBase2 > Pow2(minDistToBase))
+	if (wantsMoveCloserToBase && distToOpponentsBase2 >= Pow2(minDistToBase))
 		idleTarget += (game.GetOpponentsBasePosition() - owner.GetPosition()).Lengthed(std::max(Sqrt(distToOpponentsBase2) - minDistToBase, Rules::heroMoveRange));
-	else if (!wantsMoveCloserToBase && distToOpponentsBase2 < Pow2(maxDistToBase))
+	else if (!wantsMoveCloserToBase && distToOpponentsBase2 <= Pow2(maxDistToBase))
 		idleTarget += (owner.GetPosition() - game.GetOpponentsBasePosition()).Lengthed(std::max(maxDistToBase - Sqrt(distToOpponentsBase2), Rules::heroMoveRange));
 
 	// Set minimal distance to the map edges.
@@ -1643,6 +1644,11 @@ Vector Vector::Lengthed(int length) const
 Vector Vector::Limited(int lenght) const
 {
 	return (Length2() <= Pow2(lenght)) ? *this : Lengthed(lenght);
+}
+
+Vector Vector::Perpendicular() const
+{
+	return { -y, x };
 }
 #pragma endregion ..\Codin\Vector.cpp
 #pragma region Main.cpp
