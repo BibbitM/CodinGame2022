@@ -156,9 +156,9 @@ Vector RogueController::GetIdleTarget(const Game& game) const
 
 	// Set minimal distance to the opponents base.
 	const int distToOpponentsBase2 = Distance2(owner.GetPosition(), game.GetOpponentsBasePosition());
-	if (wantsMoveCloserToBase && distToOpponentsBase2 > Pow2(minDistToBase))
+	if (wantsMoveCloserToBase && distToOpponentsBase2 >= Pow2(minDistToBase))
 		idleTarget += (game.GetOpponentsBasePosition() - owner.GetPosition()).Lengthed(std::max(Sqrt(distToOpponentsBase2) - minDistToBase, Rules::heroMoveRange));
-	else if (!wantsMoveCloserToBase && distToOpponentsBase2 < Pow2(maxDistToBase))
+	else if (!wantsMoveCloserToBase && distToOpponentsBase2 <= Pow2(maxDistToBase))
 		idleTarget += (owner.GetPosition() - game.GetOpponentsBasePosition()).Lengthed(std::max(maxDistToBase - Sqrt(distToOpponentsBase2), Rules::heroMoveRange));
 
 	// Set minimal distance to the map edges.

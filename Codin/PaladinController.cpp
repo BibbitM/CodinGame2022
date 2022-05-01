@@ -276,9 +276,9 @@ Vector PaladinController::GetIdleTarget(const Game& game) const
 
 	// Set minimal distance to the base.
 	const int distToBase2 = Distance2(owner.GetPosition(), game.GetBasePosition());
-	if (wantsMoveCloserToBase && distToBase2 > Pow2(minDistToBase))
+	if (wantsMoveCloserToBase && distToBase2 >= Pow2(minDistToBase))
 		idleTarget += (game.GetBasePosition() - owner.GetPosition()).Lengthed(std::max(Sqrt(distToBase2) - minDistToBase, Rules::heroMoveRange));
-	else if (!wantsMoveCloserToBase && distToBase2 < Pow2(maxDistToBase))
+	else if (!wantsMoveCloserToBase && distToBase2 <= Pow2(maxDistToBase))
 		idleTarget += (owner.GetPosition() - game.GetBasePosition()).Lengthed(std::max(maxDistToBase - Sqrt(distToBase2), Rules::heroMoveRange));
 
 	// Set minimal distance to the map edges.

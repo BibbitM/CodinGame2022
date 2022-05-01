@@ -28,6 +28,7 @@ struct Vector
 	constexpr int Length2() const { return Pow2(x) + Pow2(y); }
 	Vector Lengthed(int length) const;
 	Vector Limited(int lenght) const;
+	Vector Perpendicular() const;
 };
 
 inline int Distance2(const Vector& a, const Vector& b)
