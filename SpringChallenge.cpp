@@ -696,8 +696,8 @@ void Game::TickAttackAndDefend()
 
 bool Game::ShouldAttack(const std::vector<Entity*> heroes) const
 {
-	// For the first half of the game use only one hero to protect the base.
-	if (frame < Rules::gameLenght / 2 && heroes.size() <= 2)
+	// For the first quarter of the game, use only one hero to protect the base.
+	if (frame < Rules::gameLenght / 4 && heroes.size() <= 2)
 		return false;
 
 	// Use at most two heroes to protect the base.
