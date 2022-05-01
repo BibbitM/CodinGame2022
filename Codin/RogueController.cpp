@@ -63,7 +63,7 @@ void RogueController::Tick(const Game& game)
 bool RogueController::TryCastSpells(const Game& game)
 {
 	// Check if we have enough mana.
-	if (game.GetMana() >= Rules::spellManaCost * 3)
+	if (game.GetMana() >= Rules::spellManaCost * 2)
 	{
 		// Check if there are enemies in wind shield range that can destroy the base.
 		for (const auto& ent : game.GetAllEntities())
@@ -73,22 +73,16 @@ bool RogueController::TryCastSpells(const Game& game)
 				&& Distance2(enemy->GetPosition(), owner.GetPosition()) < Pow2(Rules::spellShieldRange)
 				&& Distance2(enemy->GetPosition(), game.GetOpponentsBasePosition()) < Pow2(Rules::monsterBaseAttackRange)
 				&& enemy->GetThreatFor() == ThreatFor::OpponentsBase
-				&& Simulate::EnemyFramesToAttackBase(*enemy) < Simulate::FramesToKill(enemy->GetHealt())
+				&& Simulate::EnemyFramesToAttackBase(*enemy) < Simulate::FramesToKill(enemy->GetHealt()) * 2 / 3
 				&& enemy->GetShieldLife() == 0)
 			{
-#if LOG_ROGUE_CONTROLLER
-				std::cerr
-					<< "EnFrToAtBa:" << Simulate::EnemyFramesToAttackBase(*enemy)
-					<< ", FrToKi:" << Simulate::FramesToKill(enemy->GetHealt() * 2)
-					<< std::endl;
-#endif
 				SetSpell(Spell::Shield, enemy->GetId(), {}, "RC-spellShieldEnemy");
 				return true;
 			}
 		}
 	}
 
-	if (game.GetMana() >= Rules::spellManaCost * 5)
+	if (game.GetMana() >= Rules::spellManaCost * 3)
 	{
 		// Check if there are enemies in wind range.
 		int closerToOpponentsBase = 0;
