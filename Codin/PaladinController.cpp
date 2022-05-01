@@ -91,7 +91,7 @@ bool PaladinController::Defend(const Game& game, const Entity& opponent, bool sh
 	if (!shouldDefend)
 		return false;
 
-	int minimalMana = Rules::spellManaCost * 5;
+	int minimalMana = Rules::spellManaCost * 10;
 	const int opponentDistToBase2 = Distance2(opponent.GetPosition(), game.GetBasePosition());
 	if (opponentDistToBase2 < Pow2(Rules::monsterBaseAttackRange))
 	{
@@ -104,7 +104,7 @@ bool PaladinController::Defend(const Game& game, const Entity& opponent, bool sh
 			const int monsterDistToBase2 = Distance2(monster->GetPosition(), game.GetBasePosition());
 			if (monsterDistToBase2 < opponentDistToBase2)
 			{
-				minimalMana = Rules::spellManaCost * 3;
+				minimalMana = Rules::spellManaCost * 6;
 				break;
 			}
 		}
@@ -157,7 +157,7 @@ void PaladinController::Tick(const Game& game)
 bool PaladinController::TryCastSpellOnNearestOpponent(const Game& game)
 {
 	// Check if we have enough mana.
-	if (game.GetMana() < Rules::spellManaCost * 3)
+	if (game.GetMana() < Rules::spellManaCost * 10)
 		return false;
 
 	std::vector<const Entity*> opponents;
