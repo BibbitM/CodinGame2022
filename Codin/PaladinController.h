@@ -19,6 +19,8 @@ private:
 
 	Vector GetIdleTarget(const Game& game) const;
 
+	bool IsAnyOpponentsHeroInMyBase(const Game& game) const;
+
 	bool wantsMoveCloserToBase = false;
 
 	static constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 4; // 1 / 2;

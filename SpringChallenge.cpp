@@ -471,6 +471,8 @@ private:
 
 	Vector GetIdleTarget(const Game& game) const;
 
+	bool IsAnyOpponentsHeroInMyBase(const Game& game) const;
+
 	bool wantsMoveCloserToBase = false;
 
 	static constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 4; // 1 / 2;
@@ -922,6 +924,17 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 		return true;
 	}
 
+	// Check if I have to cast spell because there is an opponent's hero in the base.
+	if (IsAnyOpponentsHeroInMyBase(game)
+		&& dangerFrameToAttackBase <= 6
+		&& heroFrameToCastWind == 0
+		&& heroFrameToKill > 2
+		&& game.GetMana() > Rules::spellManaCost * 3)
+	{
+		SetSpell(Spell::Wind, danger.GetId(), game.GetOpponentsBasePosition(), "PC-attackWind2");
+		return true;
+	}
+
 	// Check if there is a chance to do anything with the enemy.
 	if (danger.GetShieldLife() > dangerFrameToAttackBase
 		&& dangerFrameToAttackBase <= 1
@@ -1169,6 +1182,21 @@ Vector PaladinController::GetIdleTarget(const Game& game) const
 	}
 
 	return idleTarget;
+}
+
+bool PaladinController::IsAnyOpponentsHeroInMyBase(const Game& game) const
+{
+	for (const auto& opp : game.GetAllEntities())
+	{
+		const auto& opponent = opp.second;
+		if (opponent->GetType() != EntityType::OpponentsHero)
+			continue;
+
+		if (Distance2(opponent->GetPosition(), game.GetBasePosition()) <= Pow2(Rules::monsterBaseAttackRange))
+			return true;
+	}
+
+	return false;
 }
 #pragma endregion ..\Codin\PaladinController.cpp
 #pragma region ..\Codin\PeasantController.cpp
