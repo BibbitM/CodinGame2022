@@ -583,6 +583,10 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	std::vector<Entity*> heroes = GetHeroes();
 	for (const Entity* danger : dangerousEnemies)
 	{
+		// Use at most two heroes to protect the base.
+		if (heroes.size() <= 1)
+			break;
+
 		std::sort(heroes.begin(), heroes.end(), [danger](const Entity* a, const Entity* b)
 		{
 			return Distance2(a->GetPosition(), danger->GetPosition()) < Distance2(b->GetPosition(), danger->GetPosition());
@@ -600,7 +604,8 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 
 				// If one hero can deal with it attack next danger.
 				if (danger->GetShieldLife() == 0
-					|| heroFrameToKill + heroFrameToAttackDanger <= dangerFrameToAttackBase)
+					|| heroFrameToKill + heroFrameToAttackDanger <= dangerFrameToAttackBase
+					|| heroes.size() <= 1)
 				{
 					break;
 				}
