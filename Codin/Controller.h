@@ -31,6 +31,10 @@ public:
 	virtual void Tick(const Game& game) = 0;
 	void MakeMove(std::ostream& out) const;
 
+	int GetTargetEntity() const { return targetEntity; }
+	Vector GetTargetPosition() const { return targetPosition; }
+	Spell GetTargetSpell() const { return targetSpell; }
+
 protected:
 	void SetTarget(int entity, const Vector& pos, std::string_view info);
 	void SetSpell(Spell spell, int entity, const Vector& pos, std::string_view info);
