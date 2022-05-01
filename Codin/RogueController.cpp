@@ -32,17 +32,37 @@ void RogueController::Tick(const Game& game)
 {
 	FUNCTION_TIMER();
 
-	if (wantsMoveCloserToBase && Distance2(owner.GetPosition(), game.GetOpponentsBasePosition()) <= Pow2(minDistToBase))
-		wantsMoveCloserToBase = false;
-	else if (!wantsMoveCloserToBase && Distance2(owner.GetPosition(), game.GetOpponentsBasePosition()) >= Pow2(maxDistToBase))
-		wantsMoveCloserToBase = true;
+	if (Distance2(owner.GetPosition(), game.GetOpponentsBasePosition()) <= Pow2(maxDistToBase))
+	{
+		if (moveRight
+			&& (owner.GetPosition().x < minDistToEdge || Rules::mapSize.x - owner.GetPosition().x < minDistToEdge))
+		{
+#if LOG_ROGUE_CONTROLLER
+			std::cerr << "closeX,";
+#endif
+			moveRight = false;
+		}
+		else if (!moveRight
+			&& (owner.GetPosition().y < minDistToEdge || Rules::mapSize.y - owner.GetPosition().y < minDistToEdge))
+		{
+#if LOG_ROGUE_CONTROLLER
+			std::cerr << "closeY,";
+#endif
+			moveRight = true;
+		}
+	}
+
+#if LOG_ROGUE_CONTROLLER
+	std::cerr << "moveRight:" << moveRight << std::endl;
+#endif
+
 
 	// We have already attacked dangerous enemy. No other move is needed.
 	if (HasTarget())
 		return;
 
-	if (TryCastSpells(game))
-		return;
+	//if (TryCastSpells(game))
+	//	return;
 
 	if (TryGainMaxWildMana(game))
 		return;
@@ -77,7 +97,8 @@ bool RogueController::TryCastSpells(const Game& game)
 		}
 	}
 
-	if (closerToOpponentsBase > 0 || furtherToOpponentsBase > 1)
+	if (ownerDistToOpponentsBase2 < Pow2(optDistToBase + Rules::spellWindRange)
+		&& (closerToOpponentsBase > 0 || furtherToOpponentsBase > 0))
 	{
 		SetSpell(Spell::Wind, -1, game.GetOpponentsBasePosition(), "RC-spellWindM");
 		return true;
@@ -113,7 +134,7 @@ bool RogueController::TryGainMaxWildMana(const Game& game)
 		});
 
 		const Entity* enemy = enemies.front();
-		const Vector attackPosition = Simulate::GetBestAttackPosition(owner, *enemy, GetIdleTarget(game)/*enemy->GetTargetPosition()*/, game);
+		const Vector attackPosition = Simulate::GetBestAttackPosition(owner, *enemy, GetIdleTarget(game), game);
 		SetTarget(enemy->GetId(), attackPosition, "RC-enemy0");
 		return true;
 	}
@@ -156,43 +177,27 @@ Vector RogueController::GetIdleTarget(const Game& game) const
 
 	// Set minimal distance to the opponents base.
 	const int distToOpponentsBase2 = Distance2(owner.GetPosition(), game.GetOpponentsBasePosition());
-	if (wantsMoveCloserToBase && distToOpponentsBase2 >= Pow2(minDistToBase))
-		idleTarget += (game.GetOpponentsBasePosition() - owner.GetPosition()).Lengthed(std::max(Sqrt(distToOpponentsBase2) - minDistToBase, Rules::heroMoveRange));
-	else if (!wantsMoveCloserToBase && distToOpponentsBase2 <= Pow2(maxDistToBase))
-		idleTarget += (owner.GetPosition() - game.GetOpponentsBasePosition()).Lengthed(std::max(maxDistToBase - Sqrt(distToOpponentsBase2), Rules::heroMoveRange));
 
-	// Set minimal distance to the map edges.
-	if (owner.GetPosition().x < minDistToEdge)
-		idleTarget.x += minDistToEdge - owner.GetPosition().x;
-	if (owner.GetPosition().y < minDistToEdge)
-		idleTarget.y += minDistToEdge - owner.GetPosition().y;
-	if (Rules::mapSize.x - owner.GetPosition().x < minDistToEdge)
-		idleTarget.x -= minDistToEdge - (Rules::mapSize.x - owner.GetPosition().x);
-	if (Rules::mapSize.y - owner.GetPosition().y < minDistToEdge)
-		idleTarget.y -= minDistToEdge - (Rules::mapSize.y - owner.GetPosition().y);
+	const Vector fromOpponentBase = owner.GetPosition() != game.GetOpponentsBasePosition()
+		? (owner.GetPosition() - game.GetOpponentsBasePosition()).Lengthed(Rules::heroMoveRange)
+		: (game.GetBasePosition() - game.GetOpponentsBasePosition()).Lengthed(Rules::heroMoveRange);
+	const Vector rightOpponentBase = fromOpponentBase.Perpendicular() * 4;
 
-	// Set minimal distance to other players.
-	for (const auto& opp : game.GetAllEntities())
+	if (distToOpponentsBase2 > Pow2(maxDistToBase))
 	{
-		const auto& opponent = opp.second;
-		if (opponent->GetType() == EntityType::Monster)
-			continue;
-
-		const int distToOpponent2 = Distance2(owner.GetPosition(), opponent->GetPosition());
-		if (distToOpponent2 < Pow2(minDistToHero))
-			idleTarget += owner.GetAwayDirection(*opponent).Lengthed((minDistToHero - Sqrt(distToOpponent2)) / 2);
+		idleTarget -= fromOpponentBase;
 	}
-
-	// Try to move to near enemies.
-	for (const auto& ent : game.GetAllEntities())
+	else
 	{
-		const Entity* enemy = ent.second.get();
-		if (enemy->GetType() != EntityType::Monster)
-			continue;
+		if (distToOpponentsBase2 > Pow2(optDistToBase))
+			idleTarget -= fromOpponentBase;
+		else if (distToOpponentsBase2 < Pow2(optDistToBase))
+			idleTarget += fromOpponentBase;
 
-		const int distToEnemy2 = Distance2(enemy->GetPosition(), owner.GetPosition());
-		if (distToEnemy2 < Pow2(sensDistToEnemy) && distToEnemy2 > Pow2(optDistToEnemy))
-			idleTarget += (enemy->GetPosition() - owner.GetPosition()).Lengthed(Sqrt(distToEnemy2) - optDistToEnemy);
+		if (moveRight)
+			idleTarget += rightOpponentBase;
+		else
+			idleTarget -= rightOpponentBase;
 	}
 
 	return idleTarget;

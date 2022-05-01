@@ -19,13 +19,10 @@ private:
 
 	Vector GetIdleTarget(const Game& game) const;
 
-	bool wantsMoveCloserToBase = false;
+	bool moveRight = false;
 
-	static constexpr int minDistToBase = Rules::baseViewRange - Rules::spellWindRange;
-	static constexpr int maxDistToBase = Rules::baseViewRange + Rules::spellWindRange;
-	static constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
-	static constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
-	static constexpr int sensDistToEnemy = Rules::heroViewRange * 3 / 2;
-	static constexpr int optDistToEnemy = Rules::heroAttackRange * 1 / 2;
+	static constexpr int optDistToBase = Rules::monsterBaseAttackRange;
+	static constexpr int maxDistToBase = Rules::mapSize.y;
+	static constexpr int minDistToEdge = Rules::heroMoveRange * 2;
 };
 
