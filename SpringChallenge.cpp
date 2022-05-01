@@ -193,6 +193,13 @@ class Entity;
 struct EntityDescription;
 struct StatsDescription;
 
+enum class ControllerSetup : int8_t
+{
+	Default,
+	Protect,
+	Attack
+};
+
 class Game
 {
 public:
@@ -215,8 +222,12 @@ public:
 private:
 	void TickAttackAndDefend();
 
-	void PossesEntity(Entity* hero);
+	void ControllCreatedHero(Entity* hero);
+	void SwitchControllersToProtectMyBase();
+	void SwitchControllersToAttackOpponentsBase();
 	bool ShouldAttack(const std::vector<Entity*> heroes) const;
+
+	bool IsOpponentNearMyBase() const;
 
 	std::vector<const Entity*> GetDangerousEnemies() const;
 	std::vector<const Entity*> GetDangerousOpponents() const;
@@ -229,6 +240,7 @@ private:
 	int frame{};
 	int health{};
 	int mana{};
+	ControllerSetup controllerSetup = ControllerSetup::Default;
 };
 #pragma endregion ..\Codin\Game.h
 // #include "Utils.h"
@@ -650,11 +662,17 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
 			if (entIt->second->GetType() == EntityType::MyHero)
 			{
-				PossesEntity(entIt->second.get());
+				ControllCreatedHero(entIt->second.get());
 				myHeroes.push_back(entIt->second);
 			}
 		}
 	}
+
+	// Setup controllers.
+	if (frame >= Rules::gameLenght / 2 && controllerSetup != ControllerSetup::Attack)
+		SwitchControllersToAttackOpponentsBase();
+	else if (controllerSetup == ControllerSetup::Default && IsOpponentNearMyBase())
+		SwitchControllersToProtectMyBase();
 
 	// Remove no longer valid entities.
 	for (auto it = allEntities.begin(); it != allEntities.end(); /* inside the loop */)
@@ -777,17 +795,75 @@ Vector Game::GetOpponentsBasePosition() const
 	return basePosition == Vector{} ? Rules::mapSize : Vector{};
 }
 
-void Game::PossesEntity(Entity* hero)
+void Game::ControllCreatedHero(Entity* hero)
 {
 	std::unique_ptr<Controller> controller{};
-	if (myHeroes.size() < 1)
+	if (myHeroes.size() < 0)
 		controller = std::make_unique<RogueController>(*hero);
-	else if (myHeroes.size() < 2)
+	else if (myHeroes.size() < 3)
 		controller = std::make_unique<PaladinController>(*hero);
 	else
 		controller = std::make_unique<DefenderController>(*hero);
 
 	hero->SetController(std::move(controller));
+}
+
+void Game::SwitchControllersToProtectMyBase()
+{
+	controllerSetup = ControllerSetup::Protect;
+
+	std::vector<Entity*> heroes = GetHeroes();
+	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	for (size_t i = 0; i < heroes.size(); ++i)
+	{
+		if (i < 1)
+			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
+		else
+			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
+	}
+}
+
+void Game::SwitchControllersToAttackOpponentsBase()
+{
+	controllerSetup = ControllerSetup::Attack;
+
+	std::vector<Entity*> heroes = GetHeroes();
+	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	for (size_t i = 0; i < heroes.size(); ++i)
+	{
+		if (i < 1)
+			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
+		else if (i < 2)
+			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
+		else
+			heroes[i]->SetController(std::make_unique<RogueController>(*heroes[i]));
+	}
+}
+
+bool Game::IsOpponentNearMyBase() const
+{
+	for (const auto& opp : GetAllEntities())
+	{
+		const auto& opponent = opp.second;
+		if (opponent->GetType() == EntityType::OpponentsHero
+			&& Distance2(opponent->GetPosition(), GetBasePosition()) < Pow2(Rules::baseViewRange))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 std::vector<const Entity*> Game::GetDangerousEnemies() const
@@ -1146,7 +1222,7 @@ bool PaladinController::TryGainMaxWildMana(const Game& game)
 		const int eneymDistanceToBase2 = Distance2(enemy->GetPosition(), game.GetBasePosition());
 		if (enemy->GetType() == EntityType::Monster
 			&& eneymDistanceToBase2 > Pow2(Rules::baseViewRange)
-			&& eneymDistanceToBase2 <= Pow2(Rules::baseViewRange + Rules::spellWindPushRange)
+			//&& eneymDistanceToBase2 <= Pow2(Rules::baseViewRange + Rules::spellWindPushRange)
 			&& Simulate::HeroFramesToAttackEnemy(owner, *enemy) == 0)
 		{
 			enemies.push_back(enemy);
@@ -1175,7 +1251,7 @@ bool PaladinController::TryGainMaxWildMana(const Game& game)
 		const int eneymDistanceToBase2 = Distance2(enemy->GetPosition(), game.GetBasePosition());
 		if (enemy->GetType() == EntityType::Monster
 			&& eneymDistanceToBase2 > Pow2(Rules::baseViewRange)
-			&& eneymDistanceToBase2 <= Pow2(Rules::baseViewRange + Rules::spellWindPushRange)
+			//&& eneymDistanceToBase2 <= Pow2(Rules::baseViewRange + Rules::spellWindPushRange)
 			&& Distance2(enemy->GetTargetPosition(), game.GetBasePosition()) > Pow2(Rules::baseViewRange)
 			&& Simulate::HeroFramesToAttackEnemy(owner, *enemy) == 1)
 		{
@@ -1384,7 +1460,7 @@ void RogueController::Tick(const Game& game)
 bool RogueController::TryCastSpells(const Game& game)
 {
 	// Check if we have enough mana.
-	if (game.GetMana() >= Rules::spellManaCost * 3)
+	if (game.GetMana() >= Rules::spellManaCost * 2)
 	{
 		// Check if there are enemies in wind shield range that can destroy the base.
 		for (const auto& ent : game.GetAllEntities())
@@ -1394,22 +1470,16 @@ bool RogueController::TryCastSpells(const Game& game)
 				&& Distance2(enemy->GetPosition(), owner.GetPosition()) < Pow2(Rules::spellShieldRange)
 				&& Distance2(enemy->GetPosition(), game.GetOpponentsBasePosition()) < Pow2(Rules::monsterBaseAttackRange)
 				&& enemy->GetThreatFor() == ThreatFor::OpponentsBase
-				&& Simulate::EnemyFramesToAttackBase(*enemy) < Simulate::FramesToKill(enemy->GetHealt())
+				&& Simulate::EnemyFramesToAttackBase(*enemy) < Simulate::FramesToKill(enemy->GetHealt()) * 2 / 3
 				&& enemy->GetShieldLife() == 0)
 			{
-#if LOG_ROGUE_CONTROLLER
-				std::cerr
-					<< "EnFrToAtBa:" << Simulate::EnemyFramesToAttackBase(*enemy)
-					<< ", FrToKi:" << Simulate::FramesToKill(enemy->GetHealt() * 2)
-					<< std::endl;
-#endif
 				SetSpell(Spell::Shield, enemy->GetId(), {}, "RC-spellShieldEnemy");
 				return true;
 			}
 		}
 	}
 
-	if (game.GetMana() >= Rules::spellManaCost * 5)
+	if (game.GetMana() >= Rules::spellManaCost * 3)
 	{
 		// Check if there are enemies in wind range.
 		int closerToOpponentsBase = 0;

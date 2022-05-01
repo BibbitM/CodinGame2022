@@ -12,6 +12,13 @@ class Entity;
 struct EntityDescription;
 struct StatsDescription;
 
+enum class ControllerSetup : int8_t
+{
+	Default,
+	Protect,
+	Attack
+};
+
 class Game
 {
 public:
@@ -34,8 +41,12 @@ public:
 private:
 	void TickAttackAndDefend();
 
-	void PossesEntity(Entity* hero);
+	void ControllCreatedHero(Entity* hero);
+	void SwitchControllersToProtectMyBase();
+	void SwitchControllersToAttackOpponentsBase();
 	bool ShouldAttack(const std::vector<Entity*> heroes) const;
+
+	bool IsOpponentNearMyBase() const;
 
 	std::vector<const Entity*> GetDangerousEnemies() const;
 	std::vector<const Entity*> GetDangerousOpponents() const;
@@ -48,4 +59,5 @@ private:
 	int frame{};
 	int health{};
 	int mana{};
+	ControllerSetup controllerSetup = ControllerSetup::Default;
 };

@@ -35,11 +35,17 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 			entIt = allEntities.insert(std::make_pair(entDesc.id, std::make_shared<Entity>(entDesc, frame))).first;
 			if (entIt->second->GetType() == EntityType::MyHero)
 			{
-				PossesEntity(entIt->second.get());
+				ControllCreatedHero(entIt->second.get());
 				myHeroes.push_back(entIt->second);
 			}
 		}
 	}
+
+	// Setup controllers.
+	if (frame >= Rules::gameLenght / 2 && controllerSetup != ControllerSetup::Attack)
+		SwitchControllersToAttackOpponentsBase();
+	else if (controllerSetup == ControllerSetup::Default && IsOpponentNearMyBase())
+		SwitchControllersToProtectMyBase();
 
 	// Remove no longer valid entities.
 	for (auto it = allEntities.begin(); it != allEntities.end(); /* inside the loop */)
@@ -162,17 +168,75 @@ Vector Game::GetOpponentsBasePosition() const
 	return basePosition == Vector{} ? Rules::mapSize : Vector{};
 }
 
-void Game::PossesEntity(Entity* hero)
+void Game::ControllCreatedHero(Entity* hero)
 {
 	std::unique_ptr<Controller> controller{};
-	if (myHeroes.size() < 1)
+	if (myHeroes.size() < 0)
 		controller = std::make_unique<RogueController>(*hero);
-	else if (myHeroes.size() < 2)
+	else if (myHeroes.size() < 3)
 		controller = std::make_unique<PaladinController>(*hero);
 	else
 		controller = std::make_unique<DefenderController>(*hero);
 
 	hero->SetController(std::move(controller));
+}
+
+void Game::SwitchControllersToProtectMyBase()
+{
+	controllerSetup = ControllerSetup::Protect;
+
+	std::vector<Entity*> heroes = GetHeroes();
+	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	for (size_t i = 0; i < heroes.size(); ++i)
+	{
+		if (i < 1)
+			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
+		else
+			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
+	}
+}
+
+void Game::SwitchControllersToAttackOpponentsBase()
+{
+	controllerSetup = ControllerSetup::Attack;
+
+	std::vector<Entity*> heroes = GetHeroes();
+	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	for (size_t i = 0; i < heroes.size(); ++i)
+	{
+		if (i < 1)
+			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
+		else if (i < 2)
+			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
+		else
+			heroes[i]->SetController(std::make_unique<RogueController>(*heroes[i]));
+	}
+}
+
+bool Game::IsOpponentNearMyBase() const
+{
+	for (const auto& opp : GetAllEntities())
+	{
+		const auto& opponent = opp.second;
+		if (opponent->GetType() == EntityType::OpponentsHero
+			&& Distance2(opponent->GetPosition(), GetBasePosition()) < Pow2(Rules::baseViewRange))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 std::vector<const Entity*> Game::GetDangerousEnemies() const
