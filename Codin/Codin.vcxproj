@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Controller.cpp" />
+    <ClCompile Include="DefenderController.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="EntityDescription.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -164,6 +165,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Controller.h" />
+    <ClInclude Include="DefenderController.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityDescription.h" />
     <ClInclude Include="Game.h" />

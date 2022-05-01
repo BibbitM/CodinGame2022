@@ -1,9 +1,10 @@
 #include "Game.h"
 
-#include "PaladinController.h"
-#include "PeasantController.h"
+#include "DefenderController.h"
 #include "Entity.h"
 #include "EntityDescription.h"
+#include "PaladinController.h"
+#include "PeasantController.h"
 #include "Rules.h"
 #include "RogueController.h"
 #include "Simulate.h"
@@ -166,8 +167,10 @@ void Game::PossesEntity(Entity* hero)
 	std::unique_ptr<Controller> controller{};
 	if (myHeroes.size() < 1)
 		controller = std::make_unique<RogueController>(*hero);
-	else
+	else if (myHeroes.size() < 2)
 		controller = std::make_unique<PaladinController>(*hero);
+	else
+		controller = std::make_unique<DefenderController>(*hero);
 
 	hero->SetController(std::move(controller));
 }

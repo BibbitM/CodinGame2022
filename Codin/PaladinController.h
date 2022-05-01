@@ -7,7 +7,7 @@
 class PaladinController : public Controller
 {
 public:
-	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
+	PaladinController(const Entity& owner, std::string_view name = "Paladin") : Controller(owner, name) {}
 
 	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) override;
 	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;

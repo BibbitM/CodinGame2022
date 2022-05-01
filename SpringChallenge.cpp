@@ -326,6 +326,113 @@ std::ostream& operator<<(std::ostream& out, Spell spell)
 	return out << spellName;
 }
 #pragma endregion ..\Codin\Controller.cpp
+#pragma region ..\Codin\DefenderController.cpp
+// #include "DefenderController.h"
+#pragma region ..\Codin\DefenderController.h
+// #pragma once
+// #include "PaladinController.h"
+#pragma region ..\Codin\PaladinController.h
+// #pragma once
+// #include "Controller.h"
+
+// #include "Rules.h"
+#pragma region ..\Codin\Rules.h
+// #pragma once
+// #include "Vector.h"
+
+struct Rules
+{
+	static constexpr Vector mapSize{ 17630, 9000 };
+
+	static constexpr int gameLenght = 220;
+
+	static constexpr int baseViewRange = 6000;
+
+	static constexpr int heroViewRange = 2200;
+	static constexpr int heroMoveRange = 800;
+	static constexpr int heroAttackRange = 800;
+	static constexpr int heroDamage = 2;
+
+	static constexpr int monsterMoveRange = 400;
+	static constexpr int monsterBaseAttackRange = 5000;
+	static constexpr int monsterBaseDestroyRange = 300;
+
+	static constexpr int spellManaCost = 10;
+	static constexpr int spellWindPushRange = 2200;
+	static constexpr int spellWindRange = 1280;
+	static constexpr int spellShieldTime = 12;
+	static constexpr int spellShieldRange = 2200;
+	static constexpr int spellControlRange = 2200;
+};
+#pragma endregion ..\Codin\Rules.h
+
+class PaladinController : public Controller
+{
+public:
+	PaladinController(const Entity& owner, std::string_view name = "Paladin") : Controller(owner, name) {}
+
+	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) override;
+	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
+	virtual void Tick(const Game& game) override;
+
+private:
+	bool TryCastSpellOnNearestOpponent(const Game& game);
+	bool TryGainMaxWildMana(const Game& game);
+
+	Vector GetIdleTarget(const Game& game) const;
+
+	bool IsAnyOpponentsHeroInMyBase(const Game& game) const;
+
+	bool wantsMoveCloserToBase = false;
+
+	static constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 4; // 1 / 2;
+	static constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 2 / 2; // 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
+	static constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
+	static constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
+	static constexpr int sensDistToEnemy = Rules::heroViewRange * 3 / 2;
+	static constexpr int optDistToEnemy = Rules::heroAttackRange * 1 / 2;
+};
+#pragma endregion ..\Codin\PaladinController.h
+
+class DefenderController : public PaladinController
+{
+public:
+	DefenderController(const Entity& owner) : PaladinController(owner, "Defender") {}
+
+	virtual void Tick(const Game& game) override;
+
+private:
+	Vector GetIdleTarget(const Game& game) const;
+
+	static constexpr Vector defenderPosition{ Rules::spellWindRange * 2, Rules::spellWindRange * 2 };
+};
+
+#pragma endregion ..\Codin\DefenderController.h
+
+// #include "Game.h"
+
+void DefenderController::Tick(const Game& game)
+{
+	// We have already attacked dangerous enemy. No other move is needed.
+	if (HasTarget())
+		return;
+
+	// No enemies to attack, 
+	SetTarget(-1, GetIdleTarget(game), "DC-idle");
+}
+
+Vector DefenderController::GetIdleTarget(const Game& game) const
+{
+	Vector idleTarget = game.GetBasePosition();
+
+	if (idleTarget == Vector{})
+		idleTarget = defenderPosition;
+	else
+		idleTarget -= defenderPosition;
+
+	return idleTarget;
+}
+#pragma endregion ..\Codin\DefenderController.cpp
 #pragma region ..\Codin\Entity.cpp
 // #include "Entity.h"
 
@@ -424,69 +531,10 @@ std::ostream& operator<<(std::ostream& out, const EntityDescription& entDesc)
 #pragma region ..\Codin\Game.cpp
 // #include "Game.h"
 
+// #include "DefenderController.h"
+// #include "Entity.h"
+// #include "EntityDescription.h"
 // #include "PaladinController.h"
-#pragma region ..\Codin\PaladinController.h
-// #pragma once
-// #include "Controller.h"
-
-// #include "Rules.h"
-#pragma region ..\Codin\Rules.h
-// #pragma once
-// #include "Vector.h"
-
-struct Rules
-{
-	static constexpr Vector mapSize{ 17630, 9000 };
-
-	static constexpr int gameLenght = 220;
-
-	static constexpr int baseViewRange = 6000;
-
-	static constexpr int heroViewRange = 2200;
-	static constexpr int heroMoveRange = 800;
-	static constexpr int heroAttackRange = 800;
-	static constexpr int heroDamage = 2;
-
-	static constexpr int monsterMoveRange = 400;
-	static constexpr int monsterBaseAttackRange = 5000;
-	static constexpr int monsterBaseDestroyRange = 300;
-
-	static constexpr int spellManaCost = 10;
-	static constexpr int spellWindPushRange = 2200;
-	static constexpr int spellWindRange = 1280;
-	static constexpr int spellShieldTime = 12;
-	static constexpr int spellShieldRange = 2200;
-	static constexpr int spellControlRange = 2200;
-};
-#pragma endregion ..\Codin\Rules.h
-
-class PaladinController : public Controller
-{
-public:
-	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
-
-	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) override;
-	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
-	virtual void Tick(const Game& game) override;
-
-private:
-	bool TryCastSpellOnNearestOpponent(const Game& game);
-	bool TryGainMaxWildMana(const Game& game);
-
-	Vector GetIdleTarget(const Game& game) const;
-
-	bool IsAnyOpponentsHeroInMyBase(const Game& game) const;
-
-	bool wantsMoveCloserToBase = false;
-
-	static constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 4; // 1 / 2;
-	static constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 2 / 2; // 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
-	static constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
-	static constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
-	static constexpr int sensDistToEnemy = Rules::heroViewRange * 3 / 2;
-	static constexpr int optDistToEnemy = Rules::heroAttackRange * 1 / 2;
-};
-#pragma endregion ..\Codin\PaladinController.h
 // #include "PeasantController.h"
 #pragma region ..\Codin\PeasantController.h
 // #pragma once
@@ -502,8 +550,6 @@ public:
 	virtual void Tick(const Game& game) override;
 };
 #pragma endregion ..\Codin\PeasantController.h
-// #include "Entity.h"
-// #include "EntityDescription.h"
 // #include "Rules.h"
 // #include "RogueController.h"
 #pragma region ..\Codin\RogueController.h
@@ -736,8 +782,10 @@ void Game::PossesEntity(Entity* hero)
 	std::unique_ptr<Controller> controller{};
 	if (myHeroes.size() < 1)
 		controller = std::make_unique<RogueController>(*hero);
-	else
+	else if (myHeroes.size() < 2)
 		controller = std::make_unique<PaladinController>(*hero);
+	else
+		controller = std::make_unique<DefenderController>(*hero);
 
 	hero->SetController(std::move(controller));
 }
