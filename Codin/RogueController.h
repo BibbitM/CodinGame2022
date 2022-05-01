@@ -15,16 +15,16 @@ public:
 
 private:
 	bool TryCastSpells(const Game& game);
-	bool TryGainMaxWildMana(const Game& game);
 
-	Vector GetIdleTarget(const Game& game) const;
+	Vector GetIdleTarget(const Game& game, bool moveToOpponentsBase) const;
 
 	Vector GetWindDirection(const Game& game) const;
 
 	bool moveRight = false;
+	int moveToOpponentsBaseForFrames = 0;
 
 	static constexpr int optDistToBase = Rules::monsterBaseAttackRange;
-	static constexpr int maxDistToBase = Rules::mapSize.y;
+	static constexpr int maxDistToBase = optDistToBase + Rules::spellWindPushRange;// Rules::mapSize.y;
 	static constexpr int minDistToEdge = Rules::spellWindRange;
 };
 

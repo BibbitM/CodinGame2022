@@ -46,6 +46,9 @@ void RogueController::Tick(const Game& game)
 		}
 	}
 
+	const bool moveToOpponentsBase = moveToOpponentsBaseForFrames > 0;
+	moveToOpponentsBaseForFrames = std::max(moveToOpponentsBaseForFrames - 1, 0);
+
 	// We have already attacked dangerous enemy. No other move is needed.
 	if (HasTarget())
 		return;
@@ -53,17 +56,14 @@ void RogueController::Tick(const Game& game)
 	if (TryCastSpells(game))
 		return;
 
-	//if (TryGainMaxWildMana(game))
-	//	return;
-
 	// No enemies to attack, 
-	SetTarget(-1, GetIdleTarget(game), "RC-idle");
+	SetTarget(-1, GetIdleTarget(game, moveToOpponentsBase), "RC-idle");
 }
 
 bool RogueController::TryCastSpells(const Game& game)
 {
 	// Check if we have enough mana.
-	if (game.GetMana() < Rules::spellManaCost * 3)
+	if (game.GetMana() < Rules::spellManaCost * 2)
 		return false;
 
 	// Check if there are enemies in wind range.
@@ -71,15 +71,22 @@ bool RogueController::TryCastSpells(const Game& game)
 	int furtherToOpponentsBase = 0;
 
 	const int ownerDistToOpponentsBase2 = Distance2(owner.GetPosition(), game.GetOpponentsBasePosition());
+	if (ownerDistToOpponentsBase2 >= Pow2(maxDistToBase))
+		return false;
 
 	// Get enemies in one move range that will score extra mana.
 	for (const auto& ent : game.GetAllEntities())
 	{
 		const Entity* enemy = ent.second.get();
+		const int enemyDistToOpponentsBase2 = Distance2(enemy->GetPosition(), game.GetOpponentsBasePosition());
 		if (enemy->GetType() == EntityType::Monster
-			&& Distance2(enemy->GetPosition(), owner.GetPosition()) <= Pow2(Rules::spellWindRange))
+			&& Distance2(enemy->GetPosition(), owner.GetPosition()) <= Pow2(Rules::spellWindRange)
+			&& (enemy->GetThreatFor() == ThreatFor::OpponentsBase
+				|| enemyDistToOpponentsBase2 < Pow2(Rules::monsterBaseAttackRange + Rules::spellWindPushRange)
+				)
+			)
 		{
-			if (Distance2(enemy->GetPosition(), game.GetOpponentsBasePosition()) < ownerDistToOpponentsBase2)
+			if (enemyDistToOpponentsBase2 < ownerDistToOpponentsBase2)
 				++closerToOpponentsBase;
 			else
 				++furtherToOpponentsBase;
@@ -90,82 +97,25 @@ bool RogueController::TryCastSpells(const Game& game)
 		&& (closerToOpponentsBase > 0 || furtherToOpponentsBase > 0))
 	{
 		SetSpell(Spell::Wind, -1, GetWindDirection(game), "RC-spellWind");
+		moveToOpponentsBaseForFrames = 3;
 		return true;
 	}
 
 	return false;
 }
 
-bool RogueController::TryGainMaxWildMana(const Game& game)
-{
-	std::vector<const Entity*> enemies;
-	enemies.reserve(game.GetAllEntities().size());
-
-	// Get enemies in one move range that will score extra mana.
-	for (const auto& ent : game.GetAllEntities())
-	{
-		const Entity* enemy = ent.second.get();
-		if (enemy->GetType() == EntityType::Monster
-			&& Distance2(enemy->GetPosition(), game.GetBasePosition()) > Pow2(Rules::baseViewRange)
-			&& Distance2(enemy->GetPosition(), game.GetOpponentsBasePosition()) > Pow2(Rules::monsterBaseAttackRange)
-			&& Distance2(enemy->GetTargetPosition(), game.GetOpponentsBasePosition()) > Pow2(Rules::monsterBaseAttackRange)
-			&& Simulate::HeroFramesToAttackEnemy(owner, *enemy) == 0)
-		{
-			enemies.push_back(enemy);
-		}
-	}
-
-	if (!enemies.empty())
-	{
-		std::sort(enemies.begin(), enemies.end(), [this](const Entity* a, const Entity* b)
-		{
-			return Distance2(a->GetPosition(), owner.GetPosition()) < Distance2(b->GetPosition(), owner.GetPosition());
-		});
-
-		const Entity* enemy = enemies.front();
-		const Vector attackPosition = Simulate::GetBestAttackPosition(owner, *enemy, GetIdleTarget(game), game);
-		SetTarget(enemy->GetId(), attackPosition, "RC-enemy0");
-		return true;
-	}
-
-	enemies.clear();
-
-	// Get enemies in two move range that will score extra mana.
-	for (const auto& ent : game.GetAllEntities())
-	{
-		const Entity* enemy = ent.second.get();
-		if (enemy->GetType() == EntityType::Monster
-			&& Distance2(enemy->GetPosition(), game.GetBasePosition()) > Pow2(Rules::baseViewRange)
-			&& Distance2(enemy->GetTargetPosition(), game.GetBasePosition()) > Pow2(Rules::baseViewRange)
-			&& Distance2(enemy->GetPosition(), game.GetOpponentsBasePosition()) > Pow2(Rules::monsterBaseAttackRange)
-			&& Distance2(enemy->GetTargetPosition(), game.GetOpponentsBasePosition()) > Pow2(Rules::monsterBaseAttackRange)
-			&& Simulate::HeroFramesToAttackEnemy(owner, *enemy) == 1)
-		{
-			enemies.push_back(enemy);
-		}
-	}
-
-	if (!enemies.empty())
-	{
-		std::sort(enemies.begin(), enemies.end(), [this](const Entity* a, const Entity* b)
-		{
-			return Distance2(a->GetTargetPosition(), owner.GetPosition()) < Distance2(b->GetTargetPosition(), owner.GetPosition());
-		});
-
-		const Entity* enemy = enemies.front();
-		SetTarget(enemy->GetId(), enemy->GetTargetPosition(), "RC-enemy1");
-		return true;
-	}
-
-	return false;
-}
-
-Vector RogueController::GetIdleTarget(const Game& game) const
+Vector RogueController::GetIdleTarget(const Game& game, bool moveToOpponentsBase) const
 {
 	Vector idleTarget = owner.GetPosition();
 
 	// Set minimal distance to the opponents base.
 	const int distToOpponentsBase2 = Distance2(owner.GetPosition(), game.GetOpponentsBasePosition());
+
+	if (moveToOpponentsBase
+		&& distToOpponentsBase2 > Pow2(Rules::heroMoveRange + Rules::spellWindPushRange))
+	{
+		return game.GetOpponentsBasePosition();
+	}
 
 	const Vector fromOpponentBase = owner.GetPosition() != game.GetOpponentsBasePosition()
 		? (owner.GetPosition() - game.GetOpponentsBasePosition()).Lengthed(Rules::heroMoveRange)
@@ -194,14 +144,15 @@ Vector RogueController::GetIdleTarget(const Game& game) const
 
 Vector RogueController::GetWindDirection(const Game& game) const
 {
-	Vector basePosition = game.GetOpponentsBasePosition();
-	if (Distance2(owner.GetPosition(), basePosition) <= Pow2(Rules::spellWindRange + 1))
-		return basePosition;
+	return game.GetOpponentsBasePosition();
+	//Vector basePosition = game.GetOpponentsBasePosition();
+	//if (Distance2(owner.GetPosition(), basePosition) <= Pow2(Rules::spellWindRange + 1))
+	//	return basePosition;
 
-	if (basePosition == Vector{})
-		basePosition = Vector{ Rules::spellWindRange, Rules::spellWindRange };
-	else
-		basePosition -= Vector{ Rules::spellWindRange, Rules::spellWindRange };
+	//if (basePosition == Vector{})
+	//	basePosition = Vector{ Rules::spellWindRange, Rules::spellWindRange };
+	//else
+	//	basePosition -= Vector{ Rules::spellWindRange, Rules::spellWindRange };
 
-	return basePosition;
+	//return basePosition;
 }
