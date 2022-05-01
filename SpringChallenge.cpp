@@ -531,7 +531,7 @@ private:
 	bool moveRight = false;
 	int moveToOpponentsBaseForFrames = 0;
 
-	static constexpr int optDistToBase = Rules::monsterBaseAttackRange;
+	static constexpr int optDistToBase = Rules::monsterBaseAttackRange - Rules::spellWindRange;
 	static constexpr int maxDistToBase = optDistToBase + Rules::spellWindPushRange;// Rules::mapSize.y;
 	static constexpr int minDistToEdge = Rules::spellWindRange;
 };
