@@ -19,10 +19,12 @@ private:
 
 	Vector GetIdleTarget(const Game& game) const;
 
+	Vector GetWindDirection(const Game& game) const;
+
 	bool moveRight = false;
 
 	static constexpr int optDistToBase = Rules::monsterBaseAttackRange;
 	static constexpr int maxDistToBase = Rules::mapSize.y;
-	static constexpr int minDistToEdge = Rules::heroMoveRange * 2;
+	static constexpr int minDistToEdge = Rules::spellWindRange;
 };
 

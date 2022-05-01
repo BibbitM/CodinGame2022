@@ -523,11 +523,13 @@ private:
 
 	Vector GetIdleTarget(const Game& game) const;
 
+	Vector GetWindDirection(const Game& game) const;
+
 	bool moveRight = false;
 
 	static constexpr int optDistToBase = Rules::monsterBaseAttackRange;
 	static constexpr int maxDistToBase = Rules::mapSize.y;
-	static constexpr int minDistToEdge = Rules::heroMoveRange * 2;
+	static constexpr int minDistToEdge = Rules::spellWindRange;
 };
 
 #pragma endregion ..\Codin\RogueController.h
@@ -1350,7 +1352,7 @@ bool RogueController::TryCastSpells(const Game& game)
 	if (ownerDistToOpponentsBase2 < Pow2(optDistToBase + Rules::spellWindRange)
 		&& (closerToOpponentsBase > 0 || furtherToOpponentsBase > 0))
 	{
-		SetSpell(Spell::Wind, -1, game.GetOpponentsBasePosition(), "RC-spellWindM");
+		SetSpell(Spell::Wind, -1, GetWindDirection(game), "RC-spellWind");
 		return true;
 	}
 
@@ -1451,6 +1453,20 @@ Vector RogueController::GetIdleTarget(const Game& game) const
 	}
 
 	return idleTarget;
+}
+
+Vector RogueController::GetWindDirection(const Game& game) const
+{
+	Vector basePosition = game.GetOpponentsBasePosition();
+	if (Distance2(owner.GetPosition(), basePosition) <= Pow2(Rules::spellWindRange + 1))
+		return basePosition;
+
+	if (basePosition == Vector{})
+		basePosition = Vector{ Rules::spellWindRange, Rules::spellWindRange };
+	else
+		basePosition -= Vector{ Rules::spellWindRange, Rules::spellWindRange };
+
+	return basePosition;
 }
 #pragma endregion ..\Codin\RogueController.cpp
 #pragma region ..\Codin\Simulate.cpp
