@@ -12,7 +12,10 @@ public:
 	virtual void Tick(const Game& game) override;
 
 private:
-	Vector DerermineIdleMove(const Game& game) const;
+	bool TryCastSpellOnNearestOpponent(const Game& game);
+	bool TryGainMaxWildMana(const Game& game);
+
+	Vector GetIdleTarget(const Game& game) const;
 
 	bool wantsMoveCloserToBase = false;
 
