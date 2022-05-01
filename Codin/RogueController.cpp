@@ -66,6 +66,41 @@ bool RogueController::TryCastSpells(const Game& game)
 	if (game.GetMana() >= Rules::spellManaCost * 2)
 	{
 		// Check if there are enemies in wind shield range that can destroy the base.
+
+		int opponentsInWindRange = 0;
+		int monsterAttackingBase = 0;
+
+		for (const auto& ent : game.GetAllEntities())
+		{
+			const Entity* enemy = ent.second.get();
+			if (enemy->GetType() == EntityType::Monster
+				&& enemy->GetShieldLife() > 3
+				&& Simulate::EnemyFramesToAttackBase(*enemy) < 5
+				&& Simulate::FramesToKill(enemy->GetHealt()) > 2)
+			{
+				++monsterAttackingBase;
+			}
+
+			if (enemy->GetType() == EntityType::OpponentsHero
+				&& enemy->GetShieldLife() == 0
+				&& Distance2(enemy->GetPosition(), owner.GetPosition()) < Pow2(Rules::spellWindRange))
+			{
+				++opponentsInWindRange;
+			}
+		}
+
+		if (opponentsInWindRange > 0 && monsterAttackingBase > 0)
+		{
+			SetSpell(Spell::Wind, -1, game.GetBasePosition(), "RC-spellWindOpponent");
+			return true;
+		}
+	}
+
+
+	// Check if we have enough mana.
+	if (game.GetMana() >= Rules::spellManaCost * 2)
+	{
+		// Check if there are enemies in wind shield range that can destroy the base.
 		for (const auto& ent : game.GetAllEntities())
 		{
 			const Entity* enemy = ent.second.get();
@@ -115,14 +150,14 @@ bool RogueController::TryCastSpells(const Game& game)
 		if (ownerDistToOpponentsBase2 < Pow2(optDistToBase + Rules::spellWindRange)
 			&& (closerToOpponentsBase > 0 || furtherToOpponentsBase > 0))
 		{
-			SetSpell(Spell::Wind, -1, GetWindDirection(game), "RC-spellWind");
+			SetSpell(Spell::Wind, -1, GetWindDirection(game), "RC-spellWindMonster");
 			moveToOpponentsBaseForFrames = 3;
 			return true;
 		}
 	}
 
-	// Check if we have enough mana.a
-	if (game.GetMana() >= Rules::spellManaCost * 10)
+	// Check if we have enough mana.
+	if (game.GetMana() >= Rules::spellManaCost * 25)
 	{
 		// Cast Shield on an opponent in the base to prevent pushing them inside the base.
 		for (const auto& opp : game.GetAllEntities())
