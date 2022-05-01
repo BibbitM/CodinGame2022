@@ -68,6 +68,7 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool canC
 
 	// Check if I have to cast spell because there is an opponent's hero in the base.
 	if (canCastWind
+		&& danger.GetShieldLife() == 0
 		&& IsAnyOpponentsHeroInMyBase(game)
 		&& dangerFrameToAttackBase <= 6
 		&& heroFrameToCastWind == 0
