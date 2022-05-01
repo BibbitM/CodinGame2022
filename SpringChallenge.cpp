@@ -809,6 +809,14 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 		return true;
 	}
 
+	// Check if there is a chance to do anything with the enemy.
+	if (danger.GetShieldLife() > dangerFrameToAttackBase
+		&& dangerFrameToAttackBase <= 1
+		&& dangerFrameToAttackBase <= heroFrameToAttackDanger + heroFrameToKill)
+	{
+		return false;
+	}
+
 	// I've to attack.
 	Vector attackPosition = heroFrameToAttackDanger > 0
 		? Simulate::PositionAfterFrames(danger, heroFrameToAttackDanger)
