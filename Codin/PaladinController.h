@@ -9,7 +9,7 @@ class PaladinController : public Controller
 public:
 	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
 
-	virtual bool Attack(const Game& game, const Entity& danger, bool shouldAttack) override;
+	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) override;
 	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
 	virtual void Tick(const Game& game) override;
 

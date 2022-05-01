@@ -12,7 +12,7 @@
 
 #define LOG_PALADIN_CONTROLLER 1
 
-bool PaladinController::Attack(const Game& game, const Entity& danger, bool shouldAttack)
+bool PaladinController::Attack(const Game& game, const Entity& danger, bool canCastWind)
 {
 	const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(danger);
 	const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(owner, danger);
@@ -30,9 +30,6 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 		SetSpell(Spell::Control, danger.GetId(), game.GetOpponentsBasePosition(), "PC-attackControl");
 		return true;
 	}
-
-	if (!shouldAttack)
-		return false;
 
 	// I cannot reach danger before he destroy the base.
 	if (dangerFrameToAttackBase < heroFrameToAttackDanger)
@@ -58,7 +55,8 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 #endif
 
 	// Check if I have to cast spell
-	if (danger.GetShieldLife() == 0
+	if (canCastWind
+		&& danger.GetShieldLife() == 0
 		&& dangerFrameToAttackBase <= 2
 		&& heroFrameToCastWind == 0
 		&& dangerFrameToAttackBase <= heroFrameToAttackDanger + heroFrameToKill
@@ -69,7 +67,8 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 	}
 
 	// Check if I have to cast spell because there is an opponent's hero in the base.
-	if (IsAnyOpponentsHeroInMyBase(game)
+	if (canCastWind
+		&& IsAnyOpponentsHeroInMyBase(game)
 		&& dangerFrameToAttackBase <= 6
 		&& heroFrameToCastWind == 0
 		&& heroFrameToKill > 2

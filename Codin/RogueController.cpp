@@ -12,11 +12,11 @@
 
 #define LOG_ROGUE_CONTROLLER 1
 
-bool RogueController::Attack(const Game& game, const Entity& danger, bool shouldAttack)
+bool RogueController::Attack(const Game& game, const Entity& danger, bool canCastWind)
 {
 	UNUSED(game);
 	UNUSED(danger);
-	UNUSED(shouldAttack);
+	UNUSED(canCastWind);
 	return false;
 }
 

@@ -83,7 +83,7 @@ public:
 	virtual ~Controller() { }
 
 	void Clear();
-	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) = 0;
+	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) = 0;
 	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) = 0;
 	virtual void Tick(const Game& game) = 0;
 	void MakeMove(std::ostream& out) const;
@@ -465,7 +465,7 @@ class PaladinController : public Controller
 public:
 	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
 
-	virtual bool Attack(const Game& game, const Entity& danger, bool shouldAttack) override;
+	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) override;
 	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
 	virtual void Tick(const Game& game) override;
 
@@ -497,7 +497,7 @@ class PeasantController : public Controller
 public:
 	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
 
-	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) override;
+	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) override;
 	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
 	virtual void Tick(const Game& game) override;
 };
@@ -517,7 +517,7 @@ class RogueController : public Controller
 public:
 	RogueController(const Entity& owner) : Controller(owner, "Rogue") {}
 
-	virtual bool Attack(const Game& game, const Entity& danger, bool shouldAttack) override;
+	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) override;
 	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
 	virtual void Tick(const Game& game) override;
 
@@ -641,6 +641,7 @@ void Game::TickAttackAndDefend()
 	std::vector<Entity*> heroes = GetHeroes();
 
 	// Attack
+	bool castedWind = false;
 	while (!dangerousEnemies.empty())
 	{
 		const Entity* danger = dangerousEnemies.front();
@@ -654,29 +655,19 @@ void Game::TickAttackAndDefend()
 
 		for (auto it = heroes.begin(); it != heroes.end(); /* in loop */)
 		{
-			if ((*it)->GetController()->Attack(*this, *danger, ShouldAttack(heroes)))
+			if ((*it)->GetController()->Attack(*this, *danger, !castedWind))
 			{
 				const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(*danger);
 				const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(*(*it), *danger);
 				const int heroFrameToKill = Simulate::FramesToKill(danger->GetHealt());
 
-				const bool castedWind = (*it)->GetController()->GetTargetSpell() == Spell::Wind;
-				const Vector heroPosition = (*it)->GetPosition();
+				castedWind = (*it)->GetController()->GetTargetSpell() == Spell::Wind;
 
 				it = heroes.erase(it);
 
-				// If the wind is casted, than it affects multiple enemies.
-				if (castedWind)
-				{
-					dangerousEnemies.erase(std::remove_if(dangerousEnemies.begin(), dangerousEnemies.end(), [heroPosition](const Entity* e)
-					{
-						return Distance2(e->GetPosition(), heroPosition) <= Pow2(Rules::spellWindRange);
-					}), dangerousEnemies.end());
-					break;
-				}
-
 				// If one hero can deal with it attack next danger.
 				if (danger->GetShieldLife() == 0
+					|| castedWind
 					|| heroFrameToKill + heroFrameToAttackDanger <= dangerFrameToAttackBase
 					|| heroes.size() <= 1)
 				{
@@ -890,7 +881,7 @@ private:
 
 #define LOG_PALADIN_CONTROLLER 1
 
-bool PaladinController::Attack(const Game& game, const Entity& danger, bool shouldAttack)
+bool PaladinController::Attack(const Game& game, const Entity& danger, bool canCastWind)
 {
 	const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(danger);
 	const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(owner, danger);
@@ -908,9 +899,6 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 		SetSpell(Spell::Control, danger.GetId(), game.GetOpponentsBasePosition(), "PC-attackControl");
 		return true;
 	}
-
-	if (!shouldAttack)
-		return false;
 
 	// I cannot reach danger before he destroy the base.
 	if (dangerFrameToAttackBase < heroFrameToAttackDanger)
@@ -936,7 +924,8 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 #endif
 
 	// Check if I have to cast spell
-	if (danger.GetShieldLife() == 0
+	if (canCastWind
+		&& danger.GetShieldLife() == 0
 		&& dangerFrameToAttackBase <= 2
 		&& heroFrameToCastWind == 0
 		&& dangerFrameToAttackBase <= heroFrameToAttackDanger + heroFrameToKill
@@ -947,7 +936,8 @@ bool PaladinController::Attack(const Game& game, const Entity& danger, bool shou
 	}
 
 	// Check if I have to cast spell because there is an opponent's hero in the base.
-	if (IsAnyOpponentsHeroInMyBase(game)
+	if (canCastWind
+		&& IsAnyOpponentsHeroInMyBase(game)
 		&& dangerFrameToAttackBase <= 6
 		&& heroFrameToCastWind == 0
 		&& heroFrameToKill > 2
@@ -1231,11 +1221,10 @@ bool PaladinController::IsAnyOpponentsHeroInMyBase(const Game& game) const
 #include <algorithm>
 #include <vector>
 
-bool PeasantController::Attack(const Game& game, const Entity& danger, bool shoulAttack)
+bool PeasantController::Attack(const Game& game, const Entity& danger, bool canCastWind)
 {
 	UNUSED(game);
-	if (!shoulAttack)
-		return false;
+	UNUSED(canCastWind);
 	SetTarget(danger.GetId(), danger.GetTargetPosition(), "PE-attackDanger");
 	return true;
 }
@@ -1295,11 +1284,11 @@ void PeasantController::Tick(const Game& game)
 
 #define LOG_ROGUE_CONTROLLER 1
 
-bool RogueController::Attack(const Game& game, const Entity& danger, bool shouldAttack)
+bool RogueController::Attack(const Game& game, const Entity& danger, bool canCastWind)
 {
 	UNUSED(game);
 	UNUSED(danger);
-	UNUSED(shouldAttack);
+	UNUSED(canCastWind);
 	return false;
 }
 

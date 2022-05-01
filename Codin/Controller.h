@@ -26,7 +26,7 @@ public:
 	virtual ~Controller() { }
 
 	void Clear();
-	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) = 0;
+	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) = 0;
 	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) = 0;
 	virtual void Tick(const Game& game) = 0;
 	void MakeMove(std::ostream& out) const;

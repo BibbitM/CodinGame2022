@@ -71,6 +71,7 @@ void Game::TickAttackAndDefend()
 	std::vector<Entity*> heroes = GetHeroes();
 
 	// Attack
+	bool castedWind = false;
 	while (!dangerousEnemies.empty())
 	{
 		const Entity* danger = dangerousEnemies.front();
@@ -84,29 +85,19 @@ void Game::TickAttackAndDefend()
 
 		for (auto it = heroes.begin(); it != heroes.end(); /* in loop */)
 		{
-			if ((*it)->GetController()->Attack(*this, *danger, ShouldAttack(heroes)))
+			if ((*it)->GetController()->Attack(*this, *danger, !castedWind))
 			{
 				const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(*danger);
 				const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(*(*it), *danger);
 				const int heroFrameToKill = Simulate::FramesToKill(danger->GetHealt());
 
-				const bool castedWind = (*it)->GetController()->GetTargetSpell() == Spell::Wind;
-				const Vector heroPosition = (*it)->GetPosition();
+				castedWind = (*it)->GetController()->GetTargetSpell() == Spell::Wind;
 
 				it = heroes.erase(it);
 
-				// If the wind is casted, than it affects multiple enemies.
-				if (castedWind)
-				{
-					dangerousEnemies.erase(std::remove_if(dangerousEnemies.begin(), dangerousEnemies.end(), [heroPosition](const Entity* e)
-					{
-						return Distance2(e->GetPosition(), heroPosition) <= Pow2(Rules::spellWindRange);
-					}), dangerousEnemies.end());
-					break;
-				}
-
 				// If one hero can deal with it attack next danger.
 				if (danger->GetShieldLife() == 0
+					|| castedWind
 					|| heroFrameToKill + heroFrameToAttackDanger <= dangerFrameToAttackBase
 					|| heroes.size() <= 1)
 				{
