@@ -5,6 +5,7 @@
 #include "Entity.h"
 #include "EntityDescription.h"
 #include "Rules.h"
+#include "RogueController.h"
 #include "Simulate.h"
 #include "StatsDescription.h"
 #include "Utils.h"
@@ -156,9 +157,9 @@ Vector Game::GetOpponentsBasePosition() const
 void Game::PossesEntity(Entity* hero)
 {
 	std::unique_ptr<Controller> controller{};
-	//if (myHeroes.empty())
-	//	controller = std::make_unique<PeasantController>(*hero);
-	//else
+	if (myHeroes.size() < 1)
+		controller = std::make_unique<RogueController>(*hero);
+	else
 		controller = std::make_unique<PaladinController>(*hero);
 
 	hero->SetController(std::move(controller));

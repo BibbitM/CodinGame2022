@@ -4,27 +4,28 @@
 
 #include "Rules.h"
 
-class PaladinController : public Controller
+class RogueController : public Controller
 {
 public:
-	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
+	RogueController(const Entity& owner) : Controller(owner, "Rogue") {}
 
 	virtual bool Attack(const Game& game, const Entity& danger, bool shouldAttack) override;
 	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
 	virtual void Tick(const Game& game) override;
 
 private:
-	bool TryCastSpellOnNearestOpponent(const Game& game);
+	bool TryCastSpells(const Game& game);
 	bool TryGainMaxWildMana(const Game& game);
 
 	Vector GetIdleTarget(const Game& game) const;
 
 	bool wantsMoveCloserToBase = false;
 
-	static constexpr int minDistToBase = Rules::baseViewRange + Rules::heroViewRange * 1 / 4; // 1 / 2;
-	static constexpr int maxDistToBase = Rules::baseViewRange + Rules::heroViewRange * 2 / 2; // 7 / 10; // 7/10 ~= Sqrt(2) / 2 ~= 0.707107
+	static constexpr int minDistToBase = Rules::baseViewRange - Rules::spellWindRange;
+	static constexpr int maxDistToBase = Rules::baseViewRange + Rules::spellWindRange;
 	static constexpr int minDistToEdge = Rules::heroViewRange * 7 / 10;
 	static constexpr int minDistToHero = 2 * Rules::heroViewRange * 7 / 10;
 	static constexpr int sensDistToEnemy = Rules::heroViewRange * 3 / 2;
 	static constexpr int optDistToEnemy = Rules::heroAttackRange * 1 / 2;
 };
+
