@@ -1094,8 +1094,10 @@ bool PaladinController::TryGainMaxWildMana(const Game& game)
 	for (const auto& ent : game.GetAllEntities())
 	{
 		const Entity* enemy = ent.second.get();
+		const int eneymDistanceToBase2 = Distance2(enemy->GetPosition(), game.GetBasePosition());
 		if (enemy->GetType() == EntityType::Monster
-			&& Distance2(enemy->GetPosition(), game.GetBasePosition()) > Pow2(Rules::baseViewRange)
+			&& eneymDistanceToBase2 > Pow2(Rules::baseViewRange)
+			&& eneymDistanceToBase2 <= Pow2(Rules::baseViewRange + Rules::spellWindPushRange)
 			&& Simulate::HeroFramesToAttackEnemy(owner, *enemy) == 0)
 		{
 			enemies.push_back(enemy);
@@ -1121,8 +1123,10 @@ bool PaladinController::TryGainMaxWildMana(const Game& game)
 	for (const auto& ent : game.GetAllEntities())
 	{
 		const Entity* enemy = ent.second.get();
+		const int eneymDistanceToBase2 = Distance2(enemy->GetPosition(), game.GetBasePosition());
 		if (enemy->GetType() == EntityType::Monster
-			&& Distance2(enemy->GetPosition(), game.GetBasePosition()) > Pow2(Rules::baseViewRange)
+			&& eneymDistanceToBase2 > Pow2(Rules::baseViewRange)
+			&& eneymDistanceToBase2 <= Pow2(Rules::baseViewRange + Rules::spellWindPushRange)
 			&& Distance2(enemy->GetTargetPosition(), game.GetBasePosition()) > Pow2(Rules::baseViewRange)
 			&& Simulate::HeroFramesToAttackEnemy(owner, *enemy) == 1)
 		{
