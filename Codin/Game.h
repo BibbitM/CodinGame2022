@@ -33,6 +33,7 @@ public:
 
 private:
 	void PossesEntity(Entity* hero);
+	bool ShouldAttack(const std::vector<Entity*> heroes) const;
 
 	std::vector<const Entity*> GetDangerousEnemies() const;
 	std::vector<Entity*> GetHeroes();

@@ -82,7 +82,7 @@ public:
 	virtual ~Controller() { }
 
 	void Clear();
-	virtual bool Attack(const Game& game, const Entity& danger) = 0;;
+	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) = 0;;
 	virtual void Tick(const Game& game) = 0;
 	void MakeMove(std::ostream& out) const;
 
@@ -208,6 +208,7 @@ public:
 
 private:
 	void PossesEntity(Entity* hero);
+	bool ShouldAttack(const std::vector<Entity*> heroes) const;
 
 	std::vector<const Entity*> GetDangerousEnemies() const;
 	std::vector<Entity*> GetHeroes();
@@ -427,6 +428,8 @@ struct Rules
 {
 	static constexpr Vector mapSize{ 17630, 9000 };
 
+	static constexpr int gameLenght = 220;
+
 	static constexpr int baseViewRange = 6000;
 
 	static constexpr int heroViewRange = 2200;
@@ -452,7 +455,7 @@ class PaladinController : public Controller
 public:
 	PaladinController(const Entity& owner) : Controller(owner, "Paladin") {}
 
-	virtual bool Attack(const Game& game, const Entity& danger) override;
+	virtual bool Attack(const Game& game, const Entity& danger, bool shouldAttack) override;
 	virtual void Tick(const Game& game) override;
 
 private:
@@ -482,7 +485,7 @@ class PeasantController : public Controller
 public:
 	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
 
-	virtual bool Attack(const Game& game, const Entity& danger) override;
+	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) override;
 	virtual void Tick(const Game& game) override;
 };
 #pragma endregion ..\Codin\PeasantController.h
@@ -583,8 +586,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	std::vector<Entity*> heroes = GetHeroes();
 	for (const Entity* danger : dangerousEnemies)
 	{
-		// Use at most two heroes to protect the base.
-		if (heroes.size() <= 1)
+		if (heroes.empty())
 			break;
 
 		std::sort(heroes.begin(), heroes.end(), [danger](const Entity* a, const Entity* b)
@@ -594,7 +596,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 
 		for (auto it = heroes.begin(); it != heroes.end(); /* in loop */)
 		{
-			if ((*it)->GetController()->Attack(*this, *danger))
+			if ((*it)->GetController()->Attack(*this, *danger, ShouldAttack(heroes)))
 			{
 				const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(*danger);
 				const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(*(*it), *danger);
@@ -618,6 +620,19 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	// Tick all heroes.
 	for (const auto& hero : myHeroes)
 		hero->GetController()->Tick(*this);
+}
+
+bool Game::ShouldAttack(const std::vector<Entity*> heroes) const
+{
+	// For the first half of the game use only one hero to protect the base.
+	if (frame < Rules::gameLenght / 2 && heroes.size() <= 2)
+		return false;
+
+	// Use at most two heroes to protect the base.
+	if (heroes.size() <= 1)
+		return false;
+
+	return true;
 }
 
 void Game::MakeMove(std::ostream& out) const
@@ -738,7 +753,7 @@ private:
 
 #define LOG_PALADIN_CONTROLLER 1
 
-bool PaladinController::Attack(const Game& game, const Entity& danger)
+bool PaladinController::Attack(const Game& game, const Entity& danger, bool shouldAttack)
 {
 	const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(danger);
 	const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(owner, danger);
@@ -747,8 +762,20 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 
 	constexpr int framesCanIgnore = 5;
 
+	// Set enemy move away from my base
+	if (game.GetMana() >= Rules::spellManaCost * 3
+		&& danger.GetShieldLife() == 0
+		&& Distance2(danger.GetPosition(), game.GetBasePosition()) > Pow2(Rules::monsterBaseAttackRange - Rules::monsterMoveRange + 2)
+		&& Distance2(danger.GetPosition(), owner.GetPosition()) < Pow2(Rules::spellControlRange))
+	{
+		SetSpell(Spell::Control, danger.GetId(), game.GetOpponentsBasePosition(), "PC-attackControl");
+		return true;
+	}
+
+	if (!shouldAttack)
+		return false;
+
 	// I cannot reach danger before he destroy the base.
-	// TODO: add spell check.
 	if (dangerFrameToAttackBase < heroFrameToAttackDanger)
 		return false;
 
@@ -983,9 +1010,11 @@ Vector PaladinController::GetIdleTarget(const Game& game) const
 #include <algorithm>
 #include <vector>
 
-bool PeasantController::Attack(const Game& game, const Entity& danger)
+bool PeasantController::Attack(const Game& game, const Entity& danger, bool shoulAttack)
 {
 	UNUSED(game);
+	if (!shoulAttack)
+		return false;
 	SetTarget(danger.GetId(), danger.GetTargetPosition(), "PE-attackDanger");
 	return true;
 }

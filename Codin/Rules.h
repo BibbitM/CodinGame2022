@@ -6,6 +6,8 @@ struct Rules
 {
 	static constexpr Vector mapSize{ 17630, 9000 };
 
+	static constexpr int gameLenght = 220;
+
 	static constexpr int baseViewRange = 6000;
 
 	static constexpr int heroViewRange = 2200;

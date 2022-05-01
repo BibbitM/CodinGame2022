@@ -60,8 +60,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	std::vector<Entity*> heroes = GetHeroes();
 	for (const Entity* danger : dangerousEnemies)
 	{
-		// Use at most two heroes to protect the base.
-		if (heroes.size() <= 1)
+		if (heroes.empty())
 			break;
 
 		std::sort(heroes.begin(), heroes.end(), [danger](const Entity* a, const Entity* b)
@@ -71,7 +70,7 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 
 		for (auto it = heroes.begin(); it != heroes.end(); /* in loop */)
 		{
-			if ((*it)->GetController()->Attack(*this, *danger))
+			if ((*it)->GetController()->Attack(*this, *danger, ShouldAttack(heroes)))
 			{
 				const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(*danger);
 				const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(*(*it), *danger);
@@ -95,6 +94,19 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	// Tick all heroes.
 	for (const auto& hero : myHeroes)
 		hero->GetController()->Tick(*this);
+}
+
+bool Game::ShouldAttack(const std::vector<Entity*> heroes) const
+{
+	// For the first half of the game use only one hero to protect the base.
+	if (frame < Rules::gameLenght / 2 && heroes.size() <= 2)
+		return false;
+
+	// Use at most two heroes to protect the base.
+	if (heroes.size() <= 1)
+		return false;
+
+	return true;
 }
 
 void Game::MakeMove(std::ostream& out) const

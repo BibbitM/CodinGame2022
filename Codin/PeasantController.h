@@ -7,6 +7,6 @@ class PeasantController : public Controller
 public:
 	PeasantController(const Entity& owner) : Controller(owner, "Peasant") {}
 
-	virtual bool Attack(const Game& game, const Entity& danger) override;
+	virtual bool Attack(const Game& game, const Entity& danger, bool shoulAttack) override;
 	virtual void Tick(const Game& game) override;
 };

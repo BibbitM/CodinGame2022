@@ -12,7 +12,7 @@
 
 #define LOG_PALADIN_CONTROLLER 1
 
-bool PaladinController::Attack(const Game& game, const Entity& danger)
+bool PaladinController::Attack(const Game& game, const Entity& danger, bool shouldAttack)
 {
 	const int dangerFrameToAttackBase = Simulate::EnemyFramesToAttackBase(danger);
 	const int heroFrameToAttackDanger = Simulate::HeroFramesToAttackEnemy(owner, danger);
@@ -21,8 +21,20 @@ bool PaladinController::Attack(const Game& game, const Entity& danger)
 
 	constexpr int framesCanIgnore = 5;
 
+	// Set enemy move away from my base
+	if (game.GetMana() >= Rules::spellManaCost * 3
+		&& danger.GetShieldLife() == 0
+		&& Distance2(danger.GetPosition(), game.GetBasePosition()) > Pow2(Rules::monsterBaseAttackRange - Rules::monsterMoveRange + 2)
+		&& Distance2(danger.GetPosition(), owner.GetPosition()) < Pow2(Rules::spellControlRange))
+	{
+		SetSpell(Spell::Control, danger.GetId(), game.GetOpponentsBasePosition(), "PC-attackControl");
+		return true;
+	}
+
+	if (!shouldAttack)
+		return false;
+
 	// I cannot reach danger before he destroy the base.
-	// TODO: add spell check.
 	if (dangerFrameToAttackBase < heroFrameToAttackDanger)
 		return false;
 

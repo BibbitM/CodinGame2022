@@ -7,9 +7,11 @@
 #include <algorithm>
 #include <vector>
 
-bool PeasantController::Attack(const Game& game, const Entity& danger)
+bool PeasantController::Attack(const Game& game, const Entity& danger, bool shoulAttack)
 {
 	UNUSED(game);
+	if (!shoulAttack)
+		return false;
 	SetTarget(danger.GetId(), danger.GetTargetPosition(), "PE-attackDanger");
 	return true;
 }
