@@ -1270,35 +1270,24 @@ void RogueController::Tick(const Game& game)
 		if (moveRight
 			&& (owner.GetPosition().x < minDistToEdge || Rules::mapSize.x - owner.GetPosition().x < minDistToEdge))
 		{
-#if LOG_ROGUE_CONTROLLER
-			std::cerr << "closeX,";
-#endif
 			moveRight = false;
 		}
 		else if (!moveRight
 			&& (owner.GetPosition().y < minDistToEdge || Rules::mapSize.y - owner.GetPosition().y < minDistToEdge))
 		{
-#if LOG_ROGUE_CONTROLLER
-			std::cerr << "closeY,";
-#endif
 			moveRight = true;
 		}
 	}
-
-#if LOG_ROGUE_CONTROLLER
-	std::cerr << "moveRight:" << moveRight << std::endl;
-#endif
-
 
 	// We have already attacked dangerous enemy. No other move is needed.
 	if (HasTarget())
 		return;
 
-	//if (TryCastSpells(game))
-	//	return;
-
-	if (TryGainMaxWildMana(game))
+	if (TryCastSpells(game))
 		return;
+
+	//if (TryGainMaxWildMana(game))
+	//	return;
 
 	// No enemies to attack, 
 	SetTarget(-1, GetIdleTarget(game), "RC-idle");
