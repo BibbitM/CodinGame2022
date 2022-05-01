@@ -113,16 +113,16 @@ bool PaladinController::TryCastSpellOnNearestOpponent(const Game& game)
 	// Get opponents in spell range.
 	for (const auto& ent : game.GetAllEntities())
 	{
-		const Entity* enemy = ent.second.get();
-		if (enemy->GetType() != EntityType::OpponentsHero)
+		const Entity* opponent = ent.second.get();
+		if (opponent->GetType() != EntityType::OpponentsHero)
 			continue;
 
-		const int opponentDist2 = Distance2(enemy->GetPosition(), owner.GetPosition());
+		const int opponentDist2 = Distance2(opponent->GetPosition(), owner.GetPosition());
 		if (opponentDist2 <= Pow2(Rules::spellControlRange * 2))
 			tryToCastShield = true;
 		
 		if (opponentDist2 <= Pow2(Rules::spellControlRange))
-			opponents.push_back(enemy);
+			opponents.push_back(opponent);
 	}
 
 	if (tryToCastShield && owner.GetShieldLife() == 0)
@@ -143,7 +143,10 @@ bool PaladinController::TryCastSpellOnNearestOpponent(const Game& game)
 			if (opponent->GetShieldLife() == 0 &&
 				!IsTargetedEntity(opponent->GetId(), game))
 			{
-				SetSpell(Spell::Control, opponent->GetId(), game.GetOpponentsBasePosition(), "PC-spellControl");
+				if (Distance2(opponent->GetPosition(), owner.GetPosition()) < Pow2(Rules::spellWindRange))
+					SetSpell(Spell::Wind, opponent->GetId(), game.GetOpponentsBasePosition(), "PC-spellWind");
+				else
+					SetSpell(Spell::Control, opponent->GetId(), game.GetOpponentsBasePosition(), "PC-spellControl");
 				return true;
 			}
 		}
