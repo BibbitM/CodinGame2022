@@ -589,7 +589,7 @@ private:
 	bool moveRight = false;
 	int moveToOpponentsBaseForFrames = 0;
 
-	static constexpr int optDistToBase = Rules::monsterBaseAttackRange - Rules::spellWindRange;
+	static constexpr int optDistToBase = Rules::monsterBaseAttackRange - Rules::spellWindPushRange;
 	static constexpr int maxDistToBase = optDistToBase + Rules::spellWindPushRange;// Rules::mapSize.y;
 	static constexpr int minDistToEdge = Rules::spellWindRange;
 };
@@ -1553,8 +1553,17 @@ bool RogueController::TryCastSpells(const Game& game)
 		}
 	}
 
-	// Check if we have enough mana.
-	if (game.GetMana() >= Rules::spellManaCost * 25)
+	if (game.GetMana() >= Rules::spellManaCost * 5)
+	{
+		if (owner.GetShieldLife() <= 0
+			&& Distance2(owner.GetPosition(), game.GetOpponentsBasePosition()) <= Pow2(Rules::baseViewRange))
+		{
+			SetSpell(Spell::Shield, owner.GetId(), {}, "RC-spellShieldHero");
+			return true;
+		}
+	}
+
+	if (game.GetMana() >= Rules::spellManaCost * 50)
 	{
 		// Cast Shield on an opponent in the base to prevent pushing them inside the base.
 		for (const auto& opp : game.GetAllEntities())
@@ -1593,7 +1602,7 @@ Vector RogueController::GetIdleTarget(const Game& game, bool moveToOpponentsBase
 	const Vector fromOpponentBase = owner.GetPosition() != game.GetOpponentsBasePosition()
 		? (owner.GetPosition() - game.GetOpponentsBasePosition()).Lengthed(Rules::heroMoveRange)
 		: (game.GetBasePosition() - game.GetOpponentsBasePosition()).Lengthed(Rules::heroMoveRange);
-	const Vector rightOpponentBase = fromOpponentBase.Perpendicular() * 4;
+	const Vector rightOpponentBase = fromOpponentBase.Perpendicular() * 2;
 
 	if (distToOpponentsBase2 > Pow2(maxDistToBase))
 	{
