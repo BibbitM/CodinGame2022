@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AssassinController.cpp" />
     <ClCompile Include="Controller.cpp" />
     <ClCompile Include="DefenderController.cpp" />
     <ClCompile Include="Entity.cpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AssassinController.h" />
     <ClInclude Include="Controller.h" />
     <ClInclude Include="DefenderController.h" />
     <ClInclude Include="Entity.h" />

@@ -16,6 +16,7 @@
     <ClInclude Include="Timer.h" />
     <ClInclude Include="RogueController.h" />
     <ClInclude Include="DefenderController.h" />
+    <ClInclude Include="AssassinController.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Vector.cpp" />
@@ -29,5 +30,6 @@
     <ClCompile Include="Controller.cpp" />
     <ClCompile Include="RogueController.cpp" />
     <ClCompile Include="DefenderController.cpp" />
+    <ClCompile Include="AssassinController.cpp" />
   </ItemGroup>
 </Project>

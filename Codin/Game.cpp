@@ -1,5 +1,6 @@
 #include "Game.h"
 
+#include "AssassinController.h"
 #include "DefenderController.h"
 #include "Entity.h"
 #include "EntityDescription.h"
@@ -42,10 +43,26 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	}
 
 	// Setup controllers.
-	if (frame >= Rules::gameLenght / 2 && controllerSetup != ControllerSetup::Attack)
-		SwitchControllersToAttackOpponentsBase();
-	else if (controllerSetup == ControllerSetup::Default && IsOpponentNearMyBase())
-		SwitchControllersToProtectMyBase();
+	if (frame >= Rules::gameLenght * 12 / 16)
+	{
+		if (controllerSetup != ControllerSetup::Attack)
+			SwitchControllersToAttackOpponentsBase();
+	}
+	else if (frame >= Rules::gameLenght * 10 / 16)
+	{
+		if (controllerSetup != ControllerSetup::Protect)
+			SwitchControllersToProtectMyBase();
+	}
+	else if (frame >= Rules::gameLenght * 8 / 16)
+	{
+		if (controllerSetup != ControllerSetup::Assasinate)
+			SwitchControllersToAssassinateOpponentsBase();
+	}
+	else
+	{
+		if (controllerSetup == ControllerSetup::Default && IsOpponentNearMyBase())
+			SwitchControllersToProtectMyBase();
+	}
 
 	// Remove no longer valid entities.
 	for (auto it = allEntities.begin(); it != allEntities.end(); /* inside the loop */)
@@ -181,27 +198,6 @@ void Game::ControllCreatedHero(Entity* hero)
 	hero->SetController(std::move(controller));
 }
 
-void Game::SwitchControllersToProtectMyBase()
-{
-	controllerSetup = ControllerSetup::Protect;
-
-	std::vector<Entity*> heroes = GetHeroes();
-	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
-	{
-		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
-		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
-		return aDist2 < bDist2;
-	});
-
-	for (size_t i = 0; i < heroes.size(); ++i)
-	{
-		if (i < 1)
-			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
-		else
-			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
-	}
-}
-
 void Game::SwitchControllersToAttackOpponentsBase()
 {
 	controllerSetup = ControllerSetup::Attack;
@@ -222,6 +218,48 @@ void Game::SwitchControllersToAttackOpponentsBase()
 			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
 		else
 			heroes[i]->SetController(std::make_unique<RogueController>(*heroes[i]));
+	}
+}
+
+void Game::SwitchControllersToAssassinateOpponentsBase()
+{
+	controllerSetup = ControllerSetup::Assasinate;
+
+	std::vector<Entity*> heroes = GetHeroes();
+	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	for (size_t i = 0; i < heroes.size(); ++i)
+	{
+		if (i < 1)
+			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
+		else
+			heroes[i]->SetController(std::make_unique<AssassinController>(*heroes[i], i >= 2));
+	}
+}
+
+void Game::SwitchControllersToProtectMyBase()
+{
+	controllerSetup = ControllerSetup::Protect;
+
+	std::vector<Entity*> heroes = GetHeroes();
+	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	for (size_t i = 0; i < heroes.size(); ++i)
+	{
+		if (i < 1)
+			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
+		else
+			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
 	}
 }
 

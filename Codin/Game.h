@@ -15,6 +15,7 @@ struct StatsDescription;
 enum class ControllerSetup : int8_t
 {
 	Default,
+	Assasinate,
 	Protect,
 	Attack
 };
@@ -42,8 +43,9 @@ private:
 	void TickAttackAndDefend();
 
 	void ControllCreatedHero(Entity* hero);
-	void SwitchControllersToProtectMyBase();
 	void SwitchControllersToAttackOpponentsBase();
+	void SwitchControllersToAssassinateOpponentsBase();
+	void SwitchControllersToProtectMyBase();
 	bool ShouldAttack(const std::vector<Entity*> heroes) const;
 
 	bool IsOpponentNearMyBase() const;

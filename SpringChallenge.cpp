@@ -1,4 +1,7 @@
-#pragma region ..\Codin\Controller.cpp
+#pragma region ..\Codin\AssassinController.cpp
+// #include "AssassinController.h"
+#pragma region ..\Codin\AssassinController.h
+// #pragma once
 // #include "Controller.h"
 #pragma region ..\Codin\Controller.h
 // #pragma once
@@ -109,6 +112,23 @@ private:
 };
 #pragma endregion ..\Codin\Controller.h
 
+class AssassinController : public Controller
+{
+public:
+	AssassinController(const Entity& owner, bool closeToBase) : Controller(owner, "Assassin"), closeToBase(closeToBase) {}
+
+	virtual bool Attack(const Game& game, const Entity& danger, bool canCastWind) override;
+	virtual bool Defend(const Game& game, const Entity& opponent, bool shouldDefend) override;
+	virtual void Tick(const Game& game) override;
+
+private:
+	Vector GetIdleTarget(const Game& game, bool moveToOpponentsBase) const;
+
+	int moveToOpponentsBaseForFrames = 0;
+	bool closeToBase = false;
+};
+#pragma endregion ..\Codin\AssassinController.h
+
 // #include "Entity.h"
 #pragma region ..\Codin\Entity.h
 // #pragma once
@@ -196,6 +216,7 @@ struct StatsDescription;
 enum class ControllerSetup : int8_t
 {
 	Default,
+	Assasinate,
 	Protect,
 	Attack
 };
@@ -223,8 +244,9 @@ private:
 	void TickAttackAndDefend();
 
 	void ControllCreatedHero(Entity* hero);
-	void SwitchControllersToProtectMyBase();
 	void SwitchControllersToAttackOpponentsBase();
+	void SwitchControllersToAssassinateOpponentsBase();
+	void SwitchControllersToProtectMyBase();
 	bool ShouldAttack(const std::vector<Entity*> heroes) const;
 
 	bool IsOpponentNearMyBase() const;
@@ -243,6 +265,36 @@ private:
 	ControllerSetup controllerSetup = ControllerSetup::Default;
 };
 #pragma endregion ..\Codin\Game.h
+// #include "Rules.h"
+#pragma region ..\Codin\Rules.h
+// #pragma once
+// #include "Vector.h"
+
+struct Rules
+{
+	static constexpr Vector mapSize{ 17630, 9000 };
+
+	static constexpr int gameLenght = 220;
+
+	static constexpr int baseViewRange = 6000;
+
+	static constexpr int heroViewRange = 2200;
+	static constexpr int heroMoveRange = 800;
+	static constexpr int heroAttackRange = 800;
+	static constexpr int heroDamage = 2;
+
+	static constexpr int monsterMoveRange = 400;
+	static constexpr int monsterBaseAttackRange = 5000;
+	static constexpr int monsterBaseDestroyRange = 300;
+
+	static constexpr int spellManaCost = 10;
+	static constexpr int spellWindPushRange = 2200;
+	static constexpr int spellWindRange = 1280;
+	static constexpr int spellShieldTime = 12;
+	static constexpr int spellShieldRange = 2200;
+	static constexpr int spellControlRange = 2200;
+};
+#pragma endregion ..\Codin\Rules.h
 // #include "Utils.h"
 #pragma region ..\Codin\Utils.h
 // #pragma once
@@ -259,6 +311,102 @@ private:
 
 #define UNIQUE_NAME(base) CONCAT(base, __COUNTER__)
 #pragma endregion ..\Codin\Utils.h
+
+bool AssassinController::Attack(const Game& game, const Entity& danger, bool canCastWind)
+{
+	UNUSED(game);
+	UNUSED(danger);
+	UNUSED(canCastWind);
+	return false;
+}
+
+bool AssassinController::Defend(const Game& game, const Entity& opponent, bool shouldDefend)
+{
+	UNUSED(game);
+	UNUSED(opponent);
+	UNUSED(shouldDefend);
+	return false;
+}
+
+void AssassinController::Tick(const Game& game)
+{
+	const bool moveToOpponentsBase = moveToOpponentsBaseForFrames > 0;
+	moveToOpponentsBaseForFrames = std::max(moveToOpponentsBaseForFrames - 1, 0);
+
+	const Vector idleTarget = GetIdleTarget(game, moveToOpponentsBase);
+
+	if (Distance2(owner.GetPosition(), game.GetOpponentsBasePosition()) < Pow2(Rules::baseViewRange + Rules::heroMoveRange))
+	{
+		// Try to push enemies into the base.
+		if (game.GetMana() >= Rules::spellManaCost * 3)
+		{
+			bool castWindOnMonsters = false;
+			int minDistanceToEdge = std::numeric_limits<int>::max();
+			for (const auto& ent : game.GetAllEntities())
+			{
+				const Entity* enemy = ent.second.get();
+				if (enemy->GetType() == EntityType::Monster
+					&& enemy->GetShieldLife() == 0
+					&& Distance2(enemy->GetPosition(), owner.GetPosition()) < Pow2(Rules::spellWindRange))
+				{
+					castWindOnMonsters = true;
+					minDistanceToEdge = std::min(minDistanceToEdge, std::min(enemy->GetPosition().y, Rules::mapSize.y - enemy->GetPosition().y));
+				}
+			}
+
+			if (castWindOnMonsters)
+			{
+				const Vector windTargetPoition = game.GetOpponentsBasePosition() + Vector{ 0, owner.GetPosition().y - minDistanceToEdge };
+				SetSpell(Spell::Wind, -1, windTargetPoition, "AC-windMonster");
+				moveToOpponentsBaseForFrames = 3;
+				return;
+			}
+		}
+	}
+	
+	if (Distance2(owner.GetPosition(), idleTarget) < Pow2(Rules::heroMoveRange))
+	{
+		// Try to protect myself with shield.
+		if (game.GetMana() >= Rules::spellManaCost * 6)
+		{
+			if (owner.GetShieldLife() == 0)
+			{
+				SetSpell(Spell::Shield, owner.GetId(), {}, "AC-spellShieldHero");
+				return;
+			}
+		}
+	}
+
+	SetTarget(-1, idleTarget, "AC-idle");
+}
+
+Vector AssassinController::GetIdleTarget(const Game& game, bool moveToOpponentsBase) const
+{
+	// Set minimal distance to the opponents base.
+	const int distToOpponentsBase2 = Distance2(owner.GetPosition(), game.GetOpponentsBasePosition());
+
+	if (moveToOpponentsBase
+		&& distToOpponentsBase2 > Pow2(Rules::heroMoveRange + Rules::spellWindPushRange))
+	{
+		return game.GetOpponentsBasePosition();
+	}
+
+	const Vector idleTarget = closeToBase
+		? Vector{ Rules::baseViewRange - Rules::spellWindPushRange - Rules::monsterMoveRange, Rules::spellWindRange * 7 / 10 }
+		: Vector{ Rules::baseViewRange - Rules::monsterMoveRange, Rules::spellWindRange };
+	if (game.GetOpponentsBasePosition() == Vector{})
+		return idleTarget;
+	else
+		return Rules::mapSize - idleTarget;
+}
+
+#pragma endregion ..\Codin\AssassinController.cpp
+#pragma region ..\Codin\Controller.cpp
+// #include "Controller.h"
+
+// #include "Entity.h"
+// #include "Game.h"
+// #include "Utils.h"
 
 #include <iostream>
 
@@ -348,35 +496,6 @@ std::ostream& operator<<(std::ostream& out, Spell spell)
 // #include "Controller.h"
 
 // #include "Rules.h"
-#pragma region ..\Codin\Rules.h
-// #pragma once
-// #include "Vector.h"
-
-struct Rules
-{
-	static constexpr Vector mapSize{ 17630, 9000 };
-
-	static constexpr int gameLenght = 220;
-
-	static constexpr int baseViewRange = 6000;
-
-	static constexpr int heroViewRange = 2200;
-	static constexpr int heroMoveRange = 800;
-	static constexpr int heroAttackRange = 800;
-	static constexpr int heroDamage = 2;
-
-	static constexpr int monsterMoveRange = 400;
-	static constexpr int monsterBaseAttackRange = 5000;
-	static constexpr int monsterBaseDestroyRange = 300;
-
-	static constexpr int spellManaCost = 10;
-	static constexpr int spellWindPushRange = 2200;
-	static constexpr int spellWindRange = 1280;
-	static constexpr int spellShieldTime = 12;
-	static constexpr int spellShieldRange = 2200;
-	static constexpr int spellControlRange = 2200;
-};
-#pragma endregion ..\Codin\Rules.h
 
 class PaladinController : public Controller
 {
@@ -543,6 +662,7 @@ std::ostream& operator<<(std::ostream& out, const EntityDescription& entDesc)
 #pragma region ..\Codin\Game.cpp
 // #include "Game.h"
 
+// #include "AssassinController.h"
 // #include "DefenderController.h"
 // #include "Entity.h"
 // #include "EntityDescription.h"
@@ -669,10 +789,26 @@ void Game::Tick(const StatsDescription& myStats, const StatsDescription& opponen
 	}
 
 	// Setup controllers.
-	if (frame >= Rules::gameLenght / 2 && controllerSetup != ControllerSetup::Attack)
-		SwitchControllersToAttackOpponentsBase();
-	else if (controllerSetup == ControllerSetup::Default && IsOpponentNearMyBase())
-		SwitchControllersToProtectMyBase();
+	if (frame >= Rules::gameLenght * 12 / 16)
+	{
+		if (controllerSetup != ControllerSetup::Attack)
+			SwitchControllersToAttackOpponentsBase();
+	}
+	else if (frame >= Rules::gameLenght * 10 / 16)
+	{
+		if (controllerSetup != ControllerSetup::Protect)
+			SwitchControllersToProtectMyBase();
+	}
+	else if (frame >= Rules::gameLenght * 8 / 16)
+	{
+		if (controllerSetup != ControllerSetup::Assasinate)
+			SwitchControllersToAssassinateOpponentsBase();
+	}
+	else
+	{
+		if (controllerSetup == ControllerSetup::Default && IsOpponentNearMyBase())
+			SwitchControllersToProtectMyBase();
+	}
 
 	// Remove no longer valid entities.
 	for (auto it = allEntities.begin(); it != allEntities.end(); /* inside the loop */)
@@ -808,27 +944,6 @@ void Game::ControllCreatedHero(Entity* hero)
 	hero->SetController(std::move(controller));
 }
 
-void Game::SwitchControllersToProtectMyBase()
-{
-	controllerSetup = ControllerSetup::Protect;
-
-	std::vector<Entity*> heroes = GetHeroes();
-	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
-	{
-		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
-		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
-		return aDist2 < bDist2;
-	});
-
-	for (size_t i = 0; i < heroes.size(); ++i)
-	{
-		if (i < 1)
-			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
-		else
-			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
-	}
-}
-
 void Game::SwitchControllersToAttackOpponentsBase()
 {
 	controllerSetup = ControllerSetup::Attack;
@@ -849,6 +964,48 @@ void Game::SwitchControllersToAttackOpponentsBase()
 			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
 		else
 			heroes[i]->SetController(std::make_unique<RogueController>(*heroes[i]));
+	}
+}
+
+void Game::SwitchControllersToAssassinateOpponentsBase()
+{
+	controllerSetup = ControllerSetup::Assasinate;
+
+	std::vector<Entity*> heroes = GetHeroes();
+	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	for (size_t i = 0; i < heroes.size(); ++i)
+	{
+		if (i < 1)
+			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
+		else
+			heroes[i]->SetController(std::make_unique<AssassinController>(*heroes[i], i >= 2));
+	}
+}
+
+void Game::SwitchControllersToProtectMyBase()
+{
+	controllerSetup = ControllerSetup::Protect;
+
+	std::vector<Entity*> heroes = GetHeroes();
+	std::sort(heroes.begin(), heroes.end(), [this](const Entity* a, const Entity* b)
+	{
+		const int aDist2 = Distance2(a->GetPosition(), GetBasePosition());
+		const int bDist2 = Distance2(b->GetPosition(), GetBasePosition());
+		return aDist2 < bDist2;
+	});
+
+	for (size_t i = 0; i < heroes.size(); ++i)
+	{
+		if (i < 1)
+			heroes[i]->SetController(std::make_unique<DefenderController>(*heroes[i]));
+		else
+			heroes[i]->SetController(std::make_unique<PaladinController>(*heroes[i]));
 	}
 }
 
